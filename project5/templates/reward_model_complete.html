@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'project5/style.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="main-container">
+        <h1>Human Feedback Study Status</h1>
+
+        <div class="content-box">
+            <p class="result-message success-message-text">{{ message }}</p>
+        </div>
+
+        <a href="{% url 'project5:index' %}" class="custom-link-button">Go back to Project 5 Home</a>
+    </div>
+{% endblock %}

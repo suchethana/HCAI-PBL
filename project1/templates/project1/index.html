@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'project1/style.css'%}">
+{% endblock %}
+
+{% block content %}
+<div class="main-layout-container">
+    <div class="form-section">
+        <div class="box">
+            <h2>Upload Your Dataset</h2>
+            {% if error %}
+                <p class="error">Error: {{ error }}</p>
+            {% endif %}
+            <form method="post" enctype="multipart/form-data" action="{% url 'project1:index' %}">
+                {% csrf_token %}
+                <div class="file-input-wrapper">
+                    <input type="file" name="csv_file" id="csv-file-input" accept=".csv">
+                    <label for="csv-file-input" class="custom-file-button">Choose File</label>
+                    <span id="file-name">No file chosen</span>
+                </div>
+                <button type="submit" class="upload-button">Upload & Visualize</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+{% endblock %}
+
+{% block script %}
+<script>
+    document.getElementById('csv-file-input').addEventListener('change', function() {
+        const fileName = this.files[0] ? this.files[0].name : 'No file chosen';
+        document.getElementById('file-name').textContent = fileName;
+    });
+</script>
+{% endblock script %}

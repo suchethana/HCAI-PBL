@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'project4/style.css'%}">
+{% endblock %}
+
+{% block content %}
+    <div class="main-content-card">
+        <h3>Welcome to the Movie Recommendation Study!</h3>
+        <p>Thank you for your interest in participating. Your input will help us improve movie recommendation systems. This study will take about 5-10 minutes to complete.</p>
+        <p>You will be asked to rate a series of 10 movies. After you have rated all the movies, you will receive a list of personalized recommendations and be asked to complete a short questionnaire.</p>
+
+        <h4>Informed Consent</h4>
+        <p>By clicking "I Agree & Start", you are consenting to participate in this study. Your responses will be anonymized and used for research purposes only. Your participation is voluntary, and you may withdraw at any time by closing your browser window. You must be 18 years or older to participate.</p>
+
+        <form method="post" action="{% url 'project4:start_study' %}" class="action-form">
+            {% csrf_token %}
+            <button type="submit" class="action-button primary-button">I Agree & Start</button>
+        </form>
+    </div>
+{% endblock %}

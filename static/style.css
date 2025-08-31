@@ -1,0 +1,173 @@
+/* static/home/style.css */
+
+/* Optional: Import Google Fonts (Uncomment and adjust if you want to use them) */
+/*
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Open+Sans:wght@400;600&display=swap');
+*/
+
+body {
+    /* Font family: Use imported fonts if available, otherwise fall back to system fonts */
+    font-family: 'Open Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+    /* Background Image for the entire page */
+    /* This path directly points to the static file URL served by Django in development. */
+    /* *** CRITICAL FIX: Ensure this path EXACTLY matches where your image is served. *** */
+    background-image: url("/static/home/images/DanceBot-3-LG.gif"); /* Assumes image is at your_project_root/static/home/images/ */
+
+    background-size: contain; /* Ensures the image covers the entire background */
+    background-position: -6% center; /* Centers the background image */
+    background-attachment: fixed; /* Makes the background image fixed when scrolling */
+    background-repeat: no-repeat; /* Prevents the image from repeating */
+    background-color: #ffffff; /* Fallback color if image doesn't load */
+
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: flex-end; /* Pushes content to the right */
+    align-items: flex-start; /* Aligns content to the top of the flex container */
+    min-height: 100vh; /* Ensures body takes full viewport height */
+    box-sizing: border-box; /* Includes padding in element's total width and height */
+    color: #333; /* Default text color */
+}
+
+/* Animation for the main content box on page load */
+@keyframes fadeInSlideUp {
+    0% {
+        opacity: 0;
+        transform: translateY(20px); /* Start 20px below final position */
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0); /* End at final position */
+    }
+}
+
+.box {
+    /* White with 20% opacity for better readability over the background image */
+    background-color: rgba(255, 255, 255, 0.2); /* Adjust this opacity as needed (0.0 for fully transparent, 1.0 for fully opaque) */
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Slightly stronger shadow for depth against background image */
+    padding: 40px 60px;
+    max-width: 800px;
+    width: 100%;
+    text-align: center;
+    margin-top: 50px;
+    margin-right: 50px; /* Adds margin from the right edge */
+    margin-left: -20%; /* Ensures it pushes to the right */
+    box-sizing: border-box;
+
+    /* Apply the animation */
+    opacity: 0; /* Starts hidden for animation */
+    animation: fadeInSlideUp 1s ease-out forwards; /* Animation: name, duration, timing, fill-mode */
+    animation-delay: 0.5s; /* Delays the animation slightly */
+}
+
+.title-container {
+    margin-bottom: 30px;
+}
+
+.title {
+    font-family: 'Montserrat', 'Segoe UI', sans-serif; /* Use Montserrat if imported */
+    font-size: 3em;
+    font-weight: 700;
+    color: #2c3e50;
+    letter-spacing: -1px;
+    line-height: 1.2;
+}
+
+.summary {
+    margin-bottom: 30px;
+}
+
+.centered-text {
+    font-size: 1.1em;
+    color: #555;
+    line-height: 1.6;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.summary strong {
+    color: #007bff;
+}
+
+.students {
+    margin-bottom: 30px;
+}
+
+.student-list {
+    list-style: none;
+    padding: 0;
+    margin: 20px auto;
+    max-width: 400px;
+}
+
+.student-item {
+    background-color: #f8f9fa; /* Still a light background for list items */
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.05em;
+    color: #333;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
+}
+
+.student-name {
+    font-weight: 600;
+    color: #007bff;
+    margin-right: 5px;
+}
+
+.student-id {
+    font-family: 'Courier New', Courier, monospace;
+    color: #6c757d;
+}
+
+.projects h2 {
+    font-size: 2em;
+    color: #2c3e50;
+    margin-bottom: 25px;
+}
+
+.button-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.button-container button {
+    background-color: #007bff;
+    color: white;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    width: 100%;
+    max-width: 300px;
+    text-decoration: none;
+    display: block;
+    box-sizing: border-box;
+}
+
+.button-container button:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.button-container form {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}

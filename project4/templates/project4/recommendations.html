@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'project4/style.css'%}">
+    <style>
+        .recommendation-list {
+            list-style-type: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+
+        .recommendation-list li {
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .recommendation-list li strong {
+            color: #34495e;
+            font-size: 1.1em;
+        }
+
+        .recommendation-list li .genres-display {
+            font-size: 0.9em;
+            color: #666;
+            margin-left: 0px;
+            font-style: italic;
+        }
+
+        .recommendation-list li .predicted-rating {
+            font-weight: bold;
+            color: #007bff;
+            font-size: 1em;
+            margin-left: 0px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+
+    <div class="main-content-card">
+        {% if error %}
+            <div class="result-message error">
+                <p class="message-text">Error: {{ error }}</p>
+            </div>
+        {% elif recommendations %}
+            <div class="result-message info">
+                <p class="message-text">Based on the {{ user_ratings_count }} movies you rated, here are your personalized top recommendations:</p>
+            </div>
+            <ul class="recommendation-list">
+                {% for movie in recommendations %}
+                    <li>
+                        <strong>{{ movie.title }}</strong>
+                        <span class="genres-display">Genres: {{ movie.genres|replace:"|"}}</span>
+                        <span class="predicted-rating">Predicted Score: {{ movie.predicted_rating }} / 5.0</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="result-message info">
+                <p class="message-text">{{ message|default:"No recommendations could be generated at this time. Please try rating more movies." }}</p>
+            </div>
+        {% endif %}
+
+        </div>
+
+        <div class="action-form">
+            <a href="{% url 'project4:questionnaire' %}" class="action-button primary-button">Continue to Questionnaire</a>
+        </div>
+
+        <div class="action-form">
+            <a href="{% url 'project4:start_study' %}" class="action-button primary-button">Start New Study</a>
+        </div>
+    
+
+    <a href="{% url 'home:index' %}" class="custom-link-button">Back to Home</a>
+
+{% endblock %}
+
+{% block script %}
+{% endblock script %}

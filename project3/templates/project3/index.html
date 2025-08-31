@@ -1,0 +1,529 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'project3/style.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="title-box">
+  <h2 class="page-title">Project 3: Explainability</h2>
+</div>
+
+{% if error %}
+<div class="result-message error">
+  <p class="message-text">Error: {{ error }}</p>
+</div>
+{% endif %}
+
+<!-- =========================
+     1) Decision Tree
+========================== -->
+<div class="main-content-card">
+  <h3 id="dt">1. Decision Tree Interpretability
+    <a class="anchor-link" href="#dt">#</a>
+  </h3>
+  <p>This section trains a Decision Tree classifier on the Palmer Penguins dataset and displays its characteristics.</p>
+
+  <form method="post" action="{% url 'project3:train_dt_baseline' %}" class="action-form" id="train-dt-form">
+    {% csrf_token %}
+    <button type="submit" class="action-button primary-button" id="train-dt-button">Train Decision Tree</button>
+  </form>
+
+  <div id="dt-training-status" class="training-status">
+    <div class="spinner"></div>
+    <p id="dt-status-message">Training Decision Tree...</p>
+  </div>
+
+  {% if dt_results %}
+  <div class="result-message success">
+    <p class="message-text"><strong>Decision Tree trained successfully!</strong></p>
+    <p class="message-text">Test Accuracy: {{ dt_results.accuracy|floatformat:"4" }}</p>
+    <p class="message-text">Number of Leaves: {{ dt_results.num_leaves }}</p>
+
+    <hr>
+    <p class="message-text"><strong>Tree Structure (Graphical):</strong></p>
+    <div class="tree-graph-container">
+      <img src="data:image/png;base64,{{ dt_results.tree_graph_url }}" alt="Decision Tree Graph" class="tree-graph-img" id="treeGraphThumbnail">
+      <p class="click-to-enlarge">(Click image to enlarge)</p>
+    </div>
+
+    <hr>
+    <p class="message-text"><strong>Tree Structure (Text):</strong></p>
+    <pre class="tree-text-output">{{ dt_results.tree_structure }}</pre>
+  </div>
+  {% endif %}
+</div>
+
+<!-- =========================
+     2) Sparse Decision Tree
+========================== -->
+<div class="main-content-card" style="margin-top: 30px;">
+  <h3 id="sparse-dt">2. Model Sparsity with Scikit-learn
+    <a class="anchor-link" href="#sparse-dt">#</a>
+  </h3>
+  <p>Use the slider to control λ. A higher λ gives a simpler tree; track how accuracy and complexity change.</p>
+
+  <!-- Sticky action bar -->
+  <form method="post" action="{% url 'project3:train_sparse_dt_model' %}" class="action-form sticky-action" id="train-sparse-dt-form">
+    {% csrf_token %}
+    <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+      <label for="lambda_slider_dt">Regularization (λ):</label>
+      <input type="range" id="lambda_slider_dt" name="lambda_value" min="0.1" max="0.4" step="0.1" value="0.1" style="flex-grow:1;">
+      <span id="lambda_value_display_dt">0.1</span>
+    </div>
+    <button type="submit" class="action-button primary-button" id="train-sparse-dt-button">Train Sparse Decision Tree</button>
+  </form>
+
+  <div id="sparse-dt-training-status" class="training-status">
+    <div class="spinner"></div>
+    <p id="sparse-dt-status-message">Training Sparse Decision Tree...</p>
+  </div>
+
+  {% if sparse_dt_results %}
+  <div class="result-message success" id="sparse_dt_results">
+    <p class="message-text"><strong>Sparse Decision Tree trained successfully!</strong></p>
+    <p class="message-text">λ: {{ sparse_dt_results.lambda_value }} | Max Depth: {{ sparse_dt_results.max_depth }}</p>
+    <p class="message-text">Accuracy: {{ sparse_dt_results.accuracy|floatformat:"4" }} | Leaves: {{ sparse_dt_results.num_leaves }}</p>
+
+    <!-- Delta message gets filled by JS -->
+    <p id="sparse-dt-delta" class="message-text" style="margin-top:8px;font-weight:700;"></p>
+
+    <div class="compare-wrap">
+      <button type="button" id="compareBtn" class="action-button primary-button">Compare previous runs</button>
+      <!-- Clear comparisons link -->
+      <a href="#" id="clearCompare" class="link-clear" title="Clear saved comparisons">Clear comparisons</a>
+    </div>
+    <div id="sparse-dt-history-section" class="compare-section" style="display:none;">
+      <div id="sparse-dt-history"></div>
+    </div>
+
+    <!-- Provide current run to JS -->
+    <script type="application/json" id="sparse-dt-last-run">
+    {
+      "lambda": {{ sparse_dt_results.lambda_value }},
+      "max_depth": {{ sparse_dt_results.max_depth }},
+      "accuracy": {{ sparse_dt_results.accuracy }},
+      "num_leaves": {{ sparse_dt_results.num_leaves }},
+      "img": "data:image/png;base64,{{ sparse_dt_results.tree_graph_url }}"
+    }
+    </script>
+
+    <hr>
+    <p class="message-text"><strong>Tree Structure (Graphical):</strong></p>
+    <div class="tree-graph-container">
+      <img src="data:image/png;base64,{{ sparse_dt_results.tree_graph_url }}" alt="Sparse Tree Graph" class="tree-graph-img" id="sparseTreeGraphThumbnail">
+      <p class="click-to-enlarge">(Click image to enlarge)</p>
+    </div>
+
+    <hr>
+    <p class="message-text"><strong>Tree Structure (Text):</strong></p>
+    <pre class="tree-text-output">{{ sparse_dt_results.tree_structure }}</pre>
+  </div>
+  {% endif %}
+</div>
+
+<!-- =========================
+     3) Sparse Logistic Regression
+========================== -->
+<div class="main-content-card" style="margin-top: 30px;">
+  <h3 id="sparse-lr">3. Sparse Logistic Regression
+    <a class="anchor-link" href="#sparse-lr">#</a>
+  </h3>
+  <p>Increase λ (decrease C=1/λ) to encourage sparsity in the coefficients.</p>
+
+  <!-- Sticky action bar -->
+  <form method="post" action="{% url 'project3:train_sparse_lr_model' %}" class="action-form sticky-action" id="train-sparse-lr-form">
+    {% csrf_token %}
+    <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+      <label for="lambda_slider_lr">Regularization (λ):</label>
+      <input type="range" id="lambda_slider_lr" name="lambda_value" min="0.1" max="10.0" step="0.1" value="0.1" style="flex-grow:1;">
+      <span id="lambda_value_display_lr">0.1</span>
+    </div>
+    <button type="submit" class="action-button primary-button" id="train-sparse-lr-button">Train Sparse Logistic Regression</button>
+  </form>
+
+  <div id="sparse-lr-training-status" class="training-status">
+    <div class="spinner"></div>
+    <p id="sparse-lr-status-message">Training sparse logistic regression...</p>
+  </div>
+
+  {% if sparse_lr_results %}
+  <div class="result-message success" id="sparse_lr_results">
+    <p class="message-text"><strong>Sparse Logistic Regression trained successfully!</strong></p>
+    <p class="message-text">Regularization (λ): {{ sparse_lr_results.lambda_value }}</p>
+    <p class="message-text">C Parameter (1/λ): {{ sparse_lr_results.C_param }}</p>
+    <p class="message-text">Test Accuracy: {{ sparse_lr_results.accuracy|floatformat:"4" }}</p>
+    <p class="message-text">Number of Features Used: {{ sparse_lr_results.num_features_used }}</p>
+
+    <p class="message-text" style="font-size:0.85em; color:#555;">
+      <em>Note: "Number of Features Used" counts all non-zero coefficients across classes.
+      This number can decrease even if no feature is completely removed (because some class-specific
+      coefficients may become zero).</em>
+    </p>
+
+    <hr>
+    <p class="message-text"><strong>Coefficients:</strong></p>
+    <pre class="tree-text-output">{{ sparse_lr_results.coefficients }}</pre>
+
+    {% if sparse_lr_results.coefficients_named %}
+      <p class="message-text" style="margin-top:10px;"><strong>Coefficients by feature (per class):</strong></p>
+      <div class="tree-text-output" style="overflow:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.95em;">
+          <thead>
+            <tr>
+              <th style="text-align:left; padding:6px; border-bottom:1px solid #e5e7eb;">Feature</th>
+              {% for cname in sparse_lr_results.class_names %}
+                <th style="text-align:right; padding:6px; border-bottom:1px solid #e5e7eb;">{{ cname }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in sparse_lr_results.coefficients_named %}
+              <tr>
+                <td style="padding:6px; border-bottom:1px solid #f1f5f9;">{{ row.feature }}</td>
+                {% for v in row.coefs %}
+                  <td style="text-align:right; padding:6px; border-bottom:1px solid #f1f5f9;">{{ v|floatformat:"6" }}</td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+
+    <p class="message-text" style="margin-top:10px;">
+      <strong>Removed features (all-zero across classes):</strong>
+      {% if sparse_lr_results.removed_features and sparse_lr_results.removed_features|length > 0 %}
+        {{ sparse_lr_results.removed_features|join:", " }}
+      {% else %}
+        None
+      {% endif %}
+    </p>
+
+    <p class="message-text" style="margin-top:6px;">
+      <strong>Partially pruned features (some class coefficients are zero):</strong>
+      {% if sparse_lr_results.partially_pruned_features and sparse_lr_results.partially_pruned_features|length > 0 %}
+        {{ sparse_lr_results.partially_pruned_features|join:", " }}
+      {% else %}
+        None
+      {% endif %}
+    </p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- =========================
+     4) Counterfactual Explanations
+========================== -->
+<div class="main-content-card" style="margin-top: 30px;">
+  <h3 id="cf">4. Counterfactual Explanations
+    <a class="anchor-link" href="#cf">#</a>
+  </h3>
+  <p>Pick an example index and a target species to see the closest counterfactuals.</p>
+
+  <form method="post" action="{% url 'project3:generate_counterfactuals' %}" class="action-form" id="generate-cf-form">
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="example_index">Select Example (Index 0–100):</label>
+      <input type="number" id="example_index" name="example_index" min="0" max="100" value="0">
+    </div>
+    <div class="form-group">
+      <label for="target_label">Target Label (0=Adelie, 1=Chinstrap, 2=Gentoo):</label>
+      <input type="number" id="target_label" name="target_label" min="0" max="2" value="1">
+    </div>
+    <button type="submit" class="action-button primary-button" id="generate-cf-button">
+      Generate Counterfactuals
+    </button>
+  </form>
+
+  <div id="cf-training-status" class="training-status">
+    <div class="spinner"></div>
+    <p id="cf-status-message">Generating counterfactuals...</p>
+  </div>
+
+  {% if counterfactual_results %}
+  <div class="result-message success" id="counterfactual_results">
+    <p class="message-text"><strong>Counterfactuals generated successfully!</strong></p>
+    <hr>
+    <p class="message-text">Original Example (Index: {{ counterfactual_results.original_x_index }}):</p>
+    <pre class="tree-text-output">{{ counterfactual_results.original_x }}</pre>
+    <p class="message-text">Original Label: <strong>{{ counterfactual_results.original_label }}</strong></p>
+    <p class="message-text">Target Label: <strong>{{ counterfactual_results.target_label }}</strong></p>
+
+    <hr>
+    <p class="message-text"><strong>Best Counterfactuals:</strong></p>
+    <ul class="counterfactual-list">
+      {% for cf in counterfactual_results.counterfactuals %}
+      <li data-cf-index="{{ forloop.counter0 }}">
+        <p><strong>Distance:</strong> {{ cf.distance|floatformat:"4" }}</p>
+
+        <!-- Verify chip (predicted label • probability) -->
+        <p class="verify-chip">
+          {{ cf.predicted_label }} • {{ cf.predicted_prob|floatformat:"3" }}
+        </p>
+
+        <pre>{{ cf.x }}</pre>
+
+        <!-- What changed? (diffs rendered by JS) -->
+        <div class="cf-diff" data-cf-index="{{ forloop.counter0 }}"></div>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <!-- Expose payload for diff rendering -->
+    {{ counterfactual_results|json_script:"cf_results_payload" }}
+  </div>
+  {% endif %}
+</div>
+
+<p style="margin-top: 40px;">
+  <a href="{% url 'home:index' %}" class="custom-link-button">Back to Home</a>
+</p>
+
+<!-- Image Modal -->
+<div id="treeModal" class="modal">
+  <div class="modal-content large-modal-content">
+    <span class="close-button" id="treeModalCloseButton">&times;</span>
+    <h2>Decision Tree Graph</h2>
+    <div class="modal-image-container">
+      <img src="data:image/png;base64,{{ dt_results.tree_graph_url }}" alt="Decision Tree Graph Full Size" class="modal-tree-graph-img">
+    </div>
+    <p style="text-align:center;margin-top:20px;">Use scrollbars if image is larger than window.</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  /* Loading overlays */
+  const dtTrainingStatusDiv = document.getElementById('dt-training-status');
+  const dtStatusMessageP = document.getElementById('dt-status-message');
+  const sparseDtTrainingStatusDiv = document.getElementById('sparse-dt-training-status');
+  const sparseDtStatusMessageP = document.getElementById('sparse-dt-status-message');
+  const sparseLrTrainingStatusDiv = document.getElementById('sparse-lr-training-status');
+  const sparseLrStatusMessageP = document.getElementById('sparse-lr-status-message');
+  const cfTrainingStatusDiv = document.getElementById('cf-training-status');
+  const cfStatusMessageP = document.getElementById('cf-status-message');
+
+  [dtTrainingStatusDiv, sparseDtTrainingStatusDiv, sparseLrTrainingStatusDiv, cfTrainingStatusDiv]
+    .filter(Boolean).forEach(el => el.style.display = 'none');
+
+  function showLoading(button, statusDiv, statusMessageElement, message) {
+    if (!button || !statusDiv || !statusMessageElement) return;
+    button.disabled = true;
+    button.textContent = "Processing...";
+    statusDiv.style.display = 'flex';
+    statusMessageElement.textContent = message;
+  }
+
+  /* Decision Tree form */
+  const trainDtForm = document.getElementById('train-dt-form');
+  const trainDtButton = document.getElementById('train-dt-button');
+  if (trainDtForm) {
+    trainDtForm.addEventListener('submit', function () {
+      showLoading(trainDtButton, dtTrainingStatusDiv, dtStatusMessageP,
+        "Training Decision Tree and generating visualization...");
+    });
+  }
+
+  /* Sparse DT controls */
+  const lambdaSliderDt = document.getElementById('lambda_slider_dt');
+  const lambdaValueDisplayDt = document.getElementById('lambda_value_display_dt');
+  const trainSparseDtForm = document.getElementById('train-sparse-dt-form');
+  const trainSparseDtButton = document.getElementById('train-sparse-dt-button');
+
+  if (lambdaSliderDt && lambdaValueDisplayDt) {
+    lambdaSliderDt.addEventListener('input', function () {
+      lambdaValueDisplayDt.textContent = this.value;
+    });
+  }
+  if (trainSparseDtForm) {
+    trainSparseDtForm.addEventListener('submit', function () {
+      const val = lambdaSliderDt ? lambdaSliderDt.value : 'N/A';
+      showLoading(trainSparseDtButton, sparseDtTrainingStatusDiv, sparseDtStatusMessageP,
+        "Training sparse decision tree with λ = " + val);
+    });
+  }
+
+  /* Sparse LR controls */
+  const lambdaSliderLr = document.getElementById('lambda_slider_lr');
+  const lambdaValueDisplayLr = document.getElementById('lambda_value_display_lr');
+  const trainSparseLrForm = document.getElementById('train-sparse-lr-form');
+  const trainSparseLrButton = document.getElementById('train-sparse-lr-button');
+
+  if (lambdaSliderLr && lambdaValueDisplayLr) {
+    lambdaSliderLr.addEventListener('input', function () {
+      lambdaValueDisplayLr.textContent = this.value;
+    });
+  }
+  if (trainSparseLrForm) {
+    trainSparseLrForm.addEventListener('submit', function () {
+      const val = lambdaSliderLr ? lambdaSliderLr.value : 'N/A';
+      showLoading(trainSparseLrButton, sparseLrTrainingStatusDiv, sparseLrStatusMessageP,
+        "Training sparse logistic regression with λ = " + val);
+    });
+  }
+
+  /* Counterfactuals form */
+  const generateCfForm = document.getElementById('generate-cf-form');
+  const generateCfButton = document.getElementById('generate-cf-button');
+  if (generateCfForm) {
+    generateCfForm.addEventListener('submit', function () {
+      showLoading(generateCfButton, cfTrainingStatusDiv, cfStatusMessageP, "Generating counterfactuals...");
+    });
+  }
+
+  /* Modal image viewer */
+  const treeModal = document.getElementById('treeModal');
+  const treeModalCloseButton = document.getElementById('treeModalCloseButton');
+  const modalTreeGraphImg = document.querySelector('.modal-tree-graph-img');
+  function openModal(imageSrc) {
+    if (treeModal && modalTreeGraphImg && imageSrc) {
+      modalTreeGraphImg.src = imageSrc;
+      treeModal.style.display = 'flex';
+    }
+  }
+  const treeGraphThumbnail = document.getElementById('treeGraphThumbnail');
+  if (treeGraphThumbnail) treeGraphThumbnail.addEventListener('click', function () { openModal(this.src); });
+  const sparseTreeGraphThumbnail = document.getElementById('sparseTreeGraphThumbnail');
+  if (sparseTreeGraphThumbnail) sparseTreeGraphThumbnail.addEventListener('click', function () { openModal(this.src); });
+  if (treeModalCloseButton) treeModalCloseButton.addEventListener('click', function () { treeModal.style.display = 'none'; });
+  window.addEventListener('click', function (e) { if (e.target === treeModal) treeModal.style.display = 'none'; });
+
+  /* ===== Sparse DT: history/delta/compare ===== */
+  const STORAGE_KEY = 'project3_sparseDtRuns';
+  const deltaEl = document.getElementById('sparse-dt-delta');
+  const historyWrap = document.getElementById('sparse-dt-history');
+  const compareBtn = document.getElementById('compareBtn');
+  const compareSection = document.getElementById('sparse-dt-history-section');
+  const lastRunScript = document.getElementById('sparse-dt-last-run');
+
+  function getRuns() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch (e) { return []; }
+  }
+  function setRuns(arr) { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr.slice(-8))); }
+
+  function renderDelta(prev, curr) {
+    if (!deltaEl || !prev || !curr) { if (deltaEl) deltaEl.textContent = ''; return; }
+    const leafDelta = curr.num_leaves - prev.num_leaves;
+    const accDelta = ((curr.accuracy - prev.accuracy) * 100).toFixed(1);
+    const parts = [];
+    if (leafDelta < 0) parts.push(`Tree got simpler (${Math.abs(leafDelta)} fewer leaves).`);
+    if (leafDelta > 0) parts.push(`Tree got more complex (+${leafDelta} leaves).`);
+    if (accDelta != 0) parts.push(`Performance ${accDelta > 0 ? 'improved' : 'dropped'} by ${Math.abs(accDelta)}%.`);
+    if (!parts.length) parts.push('No change in leaves/accuracy.');
+    deltaEl.textContent = parts.join(' ');
+    deltaEl.style.color = accDelta < 0 ? '#842029' : '#0f5132';
+  }
+
+  function renderHistory() {
+    if (!historyWrap) return;
+    const runs = getRuns().slice().reverse();
+    historyWrap.innerHTML = runs.map(r => `
+      <div>
+        <p><strong>λ = ${r.lambda}</strong></p>
+        <p>Accuracy: ${(r.accuracy * 100).toFixed(1)}%</p>
+        <p>Leaves: ${r.num_leaves}</p>
+        <p>Max Depth: ${r.max_depth}</p>
+      </div>
+    `).join('');
+  }
+
+  function pushRunUnique(newRun) {
+    const runs = getRuns();
+    const last = runs[runs.length - 1];
+    if (last &&
+        last.lambda === newRun.lambda &&
+        last.max_depth === newRun.max_depth &&
+        last.num_leaves === newRun.num_leaves &&
+        Math.abs((last.accuracy || 0) - (newRun.accuracy || 0)) < 1e-12) {
+      return runs;
+    }
+    runs.push(newRun);
+    setRuns(runs);
+    return runs;
+  }
+
+  if (lastRunScript) {
+    try {
+      const payload = JSON.parse(lastRunScript.textContent || '{}');
+      const after = pushRunUnique({
+        lambda: payload.lambda,
+        max_depth: payload.max_depth,
+        accuracy: payload.accuracy,
+        num_leaves: payload.num_leaves
+      });
+      const prev = after.length > 1 ? after[after.length - 2] : null;
+      renderHistory();
+      renderDelta(prev, after[after.length - 1]);
+    } catch (e) {
+      console.warn('Could not parse sparse-dt-last-run payload', e);
+      renderHistory();
+      renderDelta(null, null);
+    }
+  } else {
+    renderHistory();
+    renderDelta(null, null);
+  }
+
+  if (compareBtn && compareSection) {
+    compareBtn.style.display = 'inline-block';
+    compareBtn.onclick = function () {
+      const isOpen = compareSection.style.display !== 'none';
+      compareSection.style.display = isOpen ? 'none' : 'block';
+      compareBtn.textContent = isOpen ? 'Compare previous runs' : 'Hide comparison';
+    };
+  }
+
+  /* Clear comparisons link */
+  const clearCompare = document.getElementById('clearCompare');
+  if (clearCompare) {
+    clearCompare.addEventListener('click', function (e) {
+      e.preventDefault();
+      localStorage.removeItem(STORAGE_KEY);
+      renderHistory();
+      renderDelta(null, null);
+    });
+  }
+
+  /* ===== Counterfactual "What changed?" diffs ===== */
+  const cfPayloadEl = document.getElementById('cf_results_payload');
+  if (cfPayloadEl) {
+    try {
+      const payload = JSON.parse(cfPayloadEl.textContent);
+      const base = (payload.original_x && payload.original_x[0]) ? payload.original_x[0] : null;
+      const fns = payload.feature_names || [];
+      const list = payload.counterfactuals || [];
+      const TOL = 1e-6;
+
+      if (base && list.length) {
+        list.forEach((cf, idx) => {
+          const x = (cf.x && cf.x[0]) ? cf.x[0] : null;
+          if (!x) return;
+          const diffs = [];
+          for (let i = 0; i < Math.min(fns.length, x.length, base.length); i++) {
+            const delta = x[i] - base[i];
+            if (Math.abs(delta) > TOL) {
+              const sign = delta > 0 ? '+' : '';
+              diffs.push(`${fns[i]}: ${sign}${delta.toFixed(2)}`);
+            }
+          }
+          const mount = document.querySelector(`.cf-diff[data-cf-index="${idx}"]`);
+          if (mount) {
+            mount.innerHTML = diffs.length
+              ? `<div class="cf-diff-title">What changed:</div>
+                 <div class="cf-diff-list">${diffs.join(', ')}</div>`
+              : `<div class="cf-diff-title">What changed:</div>
+                 <div class="cf-diff-list">No material change</div>`;
+          }
+        });
+      }
+    } catch (err) {
+      console.warn('CF diff render error:', err);
+    }
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'project4/style.css'%}">
+    <style>
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            margin: 20px 0;
+        }
+        .rating-slider {
+            width: 80%;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #e0e0e0;
+            outline: none;
+            height: 8px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .rating-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            background: #007bff;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .rating-slider::-moz-range-thumb {
+            width: 25px;
+            height: 25px;
+            background: #007bff;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .slider-value {
+            margin-top: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #34495e;
+        }
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            width: 80%;
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .form-group h4 {
+            margin-bottom: 10px;
+        }
+        textarea {
+            width: 100%;
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            font-family: inherit;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="main-content-card">
+        <h3>Final Questionnaire</h3>
+        <p>Please answer the following questions to the best of your ability. Your honest feedback is crucial for our research.</p>
+
+        <form method="post" action="{% url 'project4:questionnaire' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <h4>Perceived Accuracy</h4>
+                <p>Based on your interaction, how accurate do you expect the future movie recommendations from this system to be for you?</p>
+                <div class="slider-container">
+                    <input type="range" min="1" max="5" value="3" class="rating-slider" id="accuracySlider" name="perceived_accuracy">
+                    <div class="slider-value" id="accuracyValue">3</div>
+                    <div class="slider-labels">
+                        <span>1 (Not at all)</span>
+                        <span>5 (Very accurate)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <h4>Trust</h4>
+                <p>How much do you trust this recommendation system to suggest movies you will enjoy?</p>
+                <div class="slider-container">
+                    <input type="range" min="1" max="5" value="3" class="rating-slider" id="trustSlider" name="trust">
+                    <div class="slider-value" id="trustValue">3</div>
+                    <div class="slider-labels">
+                        <span>1 (Not at all)</span>
+                        <span>5 (Completely)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <h4>Qualitative Feedback</h4>
+                <p>What did you like or find confusing about the rating process?</p>
+                <textarea id="qualitative_feedback" name="qualitative_feedback" rows="4"></textarea>
+            </div>
+
+            <button type="submit" class="action-button primary-button">Submit Feedback</button>
+        </form>
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const accuracySlider = document.getElementById('accuracySlider');
+            const accuracyValue = document.getElementById('accuracyValue');
+            const trustSlider = document.getElementById('trustSlider');
+            const trustValue = document.getElementById('trustValue');
+
+            accuracySlider.addEventListener('input', function() {
+                accuracyValue.textContent = this.value;
+            });
+
+            trustSlider.addEventListener('input', function() {
+                trustValue.textContent = this.value;
+            });
+        });
+    </script>
+{% endblock %}

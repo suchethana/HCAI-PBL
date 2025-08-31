@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'project4/style.css'%}">
+{% endblock %}
+
+{% block content %}
+    <div class="title-box">
+        <h2 class="page-title">Recommender Systems</h2>
+    </div>
+
+    <div class="main-content-card">
+        <p>
+            This is an interactive method where a new user enters their tastes (ratings from 0.5 to 5).
+        </p>
+        <p>
+            A unique aspect is providing users with information on how their answers will affect the system. This way, the user is expected to visualize the effect of their replies, and could decide to answer more strategically.
+        </p>
+    </div>
+
+    <div class="main-content-card" style="margin-top: 30px; text-align: center;">
+
+        <div style="margin-bottom: 40px;">
+
+            <h3>Project Documentation</h3>
+            <p style="margin-bottom: 15px;">
+                Click this button to download a PDF document. This document provides a detailed explanation of the implemented active learning method and the conceptual design of the user study to evaluate its effectiveness.
+            </p>
+            <a href="{% static 'project4/docs/HCAI_project4_explanation.pdf' %}" download class="action-button secondary-button">Download Project Explanation PDF</a>
+        </div>
+
+        <hr style="border: 0; height: 1px; background: #eee; margin: 40px 0;">
+
+        <div>
+
+            <h3>Start Your Movie Rating Study</h3>
+            <p style="margin-bottom: 15px;">
+                Click this button to begin the interactive cold-start study. You will be asked to rate a series of movies, and the system will provide feedback on how your choices influence its understanding of your preferences. Upon completion, you'll receive personalized movie recommendations.
+            </p>
+            <a href="{% url 'project4:start_study' %}" class="action-button primary-button">Start Cold-Start Study</a>
+        </div>
+    </div>
+
+    <a href="{% url 'home:index' %}" class="custom-link-button">Back to Home</a>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p class="loading-message" id="loadingMessage">
+                Loading Study...
+            </p>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block script %}
+    {% endblock script %}

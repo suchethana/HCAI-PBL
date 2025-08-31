@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'project4/style.css'%}">
+{% endblock %}
+
+{% block content %}
+    <div class="main-content-card">
+        <h3>Thank You for Participating!</h3>
+        <p>Your participation in this study is greatly appreciated. The purpose of this study was to compare two different approaches to movie recommendation: one with and one without real-time feedback on how your ratings were influencing the system.</p>
+        <p>You were randomly assigned to <b>Group {{ group }}</b>.</p>
+        <p>This information will help us understand if providing contextual feedback improves the user experience and the quality of recommendations for new users.</p>
+        <p>For your time, you will be compensated by getting an entry to the prize draw.</p>
+        <p>You may now close this browser window.</p>
+        <div class="action-form">
+            <a href="{% url 'home:index' %}" class="custom-link-button">Back to Home</a>
+        </div>
+    </div>
+{% endblock %}

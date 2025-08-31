@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'project5/style.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+  <h1>Policy Retraining with Human Feedback</h1>
+
+  <div class="content-box">
+    <p class="result-message success-message-text">{{ message }}</p>
+  </div>
+
+  <div class="content-box">
+    <h2>Performance Summary</h2>
+    <p style="text-align:center;"><strong>Baseline Avg Reward:</strong> {{ original_avg_reward|floatformat:2 }} (± {{ original_std|floatformat:2 }})</p>
+    <p style="text-align:center;"><strong>RLHF Avg Reward:</strong> {{ retrained_avg_reward|floatformat:2 }} (± {{ retrained_std|floatformat:2 }})</p>
+  </div>
+
+  {% if comparison_bar_img or compare_hist_img %}
+    <div class="button-container">
+      <button class="action-button primary-button" onclick="showModal('graphModal')">
+        View Graphs
+      </button>
+    </div>
+  {% endif %}
+
+  {% if original_trajectories and retrained_trajectories %}
+    <div class="content-box">
+      <h2>Example Trajectories</h2>
+
+      <div class="trajectory-comparison-container">
+        <!-- ===== Left column: Baseline ===== -->
+        <div class="trajectory-box feedback-trajectory">
+          <h3 style="text-align:center;">Baseline Trajectories</h3>
+
+          {% for traj in original_trajectories %}
+            <div class="trajectory-steps">
+              <h4 style="text-align:center; margin-top:.5rem;">
+                Trajectory {{ forloop.counter }}
+              </h4>
+              <p style="text-align:center; font-weight:600; margin:.25rem 0 1rem 0;">
+                Total Reward:
+                {% if forloop.counter == 1 %}
+                  {{ original_total_reward1|floatformat:2 }}
+                {% elif forloop.counter == 2 %}
+                  {{ original_total_reward2|floatformat:2 }}
+                {% else %}
+                  {{ traj|length }}
+                {% endif %}
+              </p>
+
+              {% for step in traj %}
+                <div class="trajectory-step">
+                  <p style="text-align:center; font-weight:700; margin:.25rem 0;">Step {{ step.step }}</p>
+                  <p style="text-align:center;"><strong>Action:</strong> {% firstof step.action step.action_name %}</p>
+                  <p style="text-align:center;"><strong>Reward:</strong> {{ step.reward|floatformat:2 }}</p>
+
+                  {% if step.grid_html %}
+                    <div class="grid-display-alt">{{ step.grid_html|safe }}</div>
+                  {% else %}
+                    <pre class="grid-display">{{ step.grid_output }}</pre>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- ===== Right column: RLHF ===== -->
+        <div class="trajectory-box feedback-trajectory">
+          <h3 style="text-align:center;">RLHF Trajectories</h3>
+
+          {% for traj in retrained_trajectories %}
+            <div class="trajectory-steps">
+              <h4 style="text-align:center; margin-top:.5rem;">
+                Trajectory {{ forloop.counter }}
+              </h4>
+              <p style="text-align:center; font-weight:600; margin:.25rem 0 1rem 0;">
+                Total Reward:
+                {% if forloop.counter == 1 %}
+                  {{ retrained_total_reward1|floatformat:2 }}
+                {% elif forloop.counter == 2 %}
+                  {{ retrained_total_reward2|floatformat:2 }}
+                {% else %}
+                  {{ traj|length }}
+                {% endif %}
+              </p>
+
+              {% for step in traj %}
+                <div class="trajectory-step">
+                  <p style="text-align:center; font-weight:700; margin:.25rem 0;">Step {{ step.step }}</p>
+                  <p style="text-align:center;"><strong>Action:</strong> {% firstof step.action step.action_name %}</p>
+                  <p style="text-align:center;"><strong>Reward:</strong> {{ step.reward|floatformat:2 }}</p>
+
+                  {% if step.grid_html %}
+                    <div class="grid-display-alt">{{ step.grid_html|safe }}</div>
+                  {% else %}
+                    <pre class="grid-display">{{ step.grid_output }}</pre>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <a href="{% url 'project5:index' %}" class="custom-link-button">Go back to Project 5 Home</a>
+</div>
+
+{% if comparison_bar_img or compare_hist_img %}
+<div id="graphModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Training Metrics</h3>
+      <span class="close-button" onclick="closeModal('graphModal')">&times;</span>
+    </div>
+    <div class="modal-body">
+      {% if comparison_bar_img %}
+        <h4>Baseline vs RLHF (Mean ± Std)</h4>
+        <img class="chart-img" alt="Baseline vs RLHF"
+             src="data:image/png;base64,{{ comparison_bar_img }}">
+      {% endif %}
+      {% if compare_hist_img %}
+        <h4>Return Distributions</h4>
+        <img class="chart-img" alt="Return Distributions"
+             src="data:image/png;base64,{{ compare_hist_img }}">
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block script %}
+<script>
+  function showModal(id){var el=document.getElementById(id); if(el) el.style.display='block';}
+  function closeModal(id){var el=document.getElementById(id); if(el) el.style.display='none';}
+  window.onclick=function(e){ if(e.target.classList && e.target.classList.contains('modal')){ e.target.style.display='none'; } }
+</script>
+{% endblock %}

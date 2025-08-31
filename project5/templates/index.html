@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'project5/style.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="main-container">
+        <h1> Reinforcement Learning with Human Feedback</h1>
+
+        <p>This project implements reinforcement learning with human feedback for a simple game where a mouse tries to get some cheese.</p>
+
+        <div class="content-box">
+            <h2>Start REINFORCE Training</h2>
+            <p>Click this button to begin the REINFORCE training process for the mouse. The system will learn an optimal policy based on a given reward function.</p>
+            <div class="action-form">
+                <form method="get" action="{% url 'project5:train_agent' %}" id="startTrainingForm">
+                    {% csrf_token %}
+                    <button type="submit" class="action-button primary-button">Start REINFORCE Training</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="content-box">
+            <h2>Human Feedback Study</h2>
+            <p>Once you have a trained agent, click here to begin the human feedback study and train a reward model.</p>
+            <div class="action-form">
+                <form method="get" action="{% url 'project5:start_feedback_study' %}" id="startFeedbackForm">
+                    {% csrf_token %}
+                    <button type="submit" class="action-button primary-button">Start Feedback Study</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="content-box">
+            <h2>Retrain Policy with Feedback</h2>
+            <p>After completing the feedback study, click here to retrain the policy with the new reward model and a penalty.</p>
+            <div class="action-form">
+                <form method="get" action="{% url 'project5:retrain_with_feedback' %}" id="retrainPolicyForm">
+                    {% csrf_token %}
+                    <button type="submit" class="action-button primary-button">Retrain Policy</button>
+                </form>
+            </div>
+        </div>
+
+        <a href="{% url 'home:index' %}" class="custom-link-button">Back to Home</a>
+
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <p class="loading-message" id="loadingMessage">
+                    Starting training...
+                </p>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script>
+        document.getElementById('startTrainingForm').addEventListener('submit', function() {
+            document.getElementById('loadingOverlay').classList.add('active');
+        });
+        document.getElementById('startFeedbackForm').addEventListener('submit', function() {
+            document.getElementById('loadingOverlay').classList.add('active');
+            document.getElementById('loadingMessage').innerText = "Collecting feedback...";
+        });
+        document.getElementById('retrainPolicyForm').addEventListener('submit', function() {
+            document.getElementById('loadingOverlay').classList.add('active');
+            document.getElementById('loadingMessage').innerText = "Retraining policy...";
+        });
+    </script>
+{% endblock script %}

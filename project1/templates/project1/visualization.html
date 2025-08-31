@@ -1,0 +1,362 @@
+{% extends 'project1/project1_base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'project1/style.css'%}">
+{% endblock %}
+
+{% block extra_body_classes %}no-bg-image{% endblock %}
+
+{% block content %}
+
+    <h2 class="page-title">Dataset Overview & Visualization</h2>
+
+    <div class="problem-type-info">
+        <p><strong>Detected Problem Type:</strong> {{ problem_type }} (Target: "{{ target_column_name }}")</p>
+    </div>
+
+
+    <div class="plot-controls-row-container">
+        <div class="plot-section">
+            <h3 class="section-title">Visualizing Data:</h3>
+            {% if plot_url %}
+                <img src="data:image/png;base64,{{ plot_url }}" alt="Data Visualization Plot" class="data-plot">
+            {% else %}
+                <p class="error">{% if plot_error %}{{ plot_error }}{% else %}Select features and generate a plot above.{% endif %}</p>
+            {% endif %}
+        </div>
+
+        <div class="visualization-controls-container">
+            <h3>Select Visualization Options:</h3>
+            <form method="post" action="{% url 'project1:visualize_data' %}" class="visualization-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="generate_plot">
+
+                <div class="form-group">
+                    <label for="plot_type">Plot Type:</label>
+                    <select name="plot_type" id="plot_type">
+                        <option value="scatter" {% if selected_plot_type == 'scatter' %}selected{% endif %}>Scatter Plot</option>
+                        <option value="histogram" {% if selected_plot_type == 'histogram' %}selected{% endif %}>Histogram</option>
+                        <option value="boxplot" {% if selected_plot_type == 'boxplot' %}selected{% endif %}>Box Plot</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="x_axis_feature">X-axis Feature:</label>
+                    <select name="x_axis_feature" id="x_axis_feature">
+                        {% for col_name in numerical_column_names %}
+                            <option value="{{ col_name }}" {% if col_name == selected_x_feature %}selected{% endif %}>{{ col_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group" id="y-axis-group">
+                    <label for="y_axis_feature">Y-axis Feature (for Scatter):</label>
+                    <select name="y_axis_feature" id="y_axis_feature">
+                        <option value="">-- Select (Optional) --</option>
+                        {% for col_name in numerical_column_names %}
+                            <option value="{{ col_name }}" {% if col_name == selected_y_feature %}selected{% endif %}>{{ col_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="group_by_feature">Group by (for colors/categories):</label>
+                    <select name="group_by_feature" id="group_by_feature">
+                        <option value="">-- None --</option>
+                        {% for col_name in all_column_names %}
+                            <option value="{{ col_name }}" {% if col_name == selected_group_by %}selected{% endif %}>{{ col_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="upload-button">Generate Plot</button>
+            </form>
+        </div>
+    </div>
+
+
+    <hr style="margin: 40px 0;">
+
+    <h2>Train a Machine Learning Model</h2>
+
+    {% if training_error %}
+        <p class="error">Training Error: {{ training_error }}</p>
+    {% endif %}
+
+    <form method="post" action="{% url 'project1:visualize_data' %}" class="training-form" id="training-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="train_model">
+
+        <div class="form-group">
+            <label for="model_name">Select Model:</label>
+            <select name="model_name" id="model_name">
+            </select>
+        </div>
+
+
+        <div id="hyperparameters-container" class="hyperparameters-container">
+        </div>
+
+        <div class="form-group">
+            <label for="test_size">Test Set Size (0.01 to 0.99):</label>
+            <input type="number" step="0.01" min="0.01" max="0.99" name="test_size" id="test_size" value="{{ selected_test_size }}">
+        </div>
+
+        <div class="form-group">
+            <label>Select Features for Training:</label><br>
+            <div class="features-checkbox-group">
+                {% for col_name in numerical_column_names %}
+                    {% if col_name != target_column_name %}
+                        <input type="checkbox" name="train_features" id="train-feature-{{ forloop.counter }}" value="{{ col_name }}" checked>
+                        <label for="train-feature-{{ forloop.counter }}">{{ col_name }}</label><br>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="train_target_column">Select Target Column for Training:</label>
+            <select name="train_target_column" id="train_target_column">
+                {% for col_name in all_column_names %}
+                    <option value="{{ col_name }}" {% if col_name == target_column_name %}selected{% endif %}>{{ col_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit" class="upload-button" id="train-model-button">Train Model</button>
+
+        <div id="loadingSpinner" class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Training model, please wait...</p>
+        </div>
+    </form>
+
+
+    <div id="resultsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Model Evaluation Results</h2>
+            {% if evaluation_results %}
+                <div class="results-table-container modal-results-table">
+                    <table>
+                        <tr><th>Metric</th><th>Value</th></tr>
+                        {% for key, value in evaluation_results.items %}
+                            <tr>
+                                <td>{{ key }}</td>
+                                <td>
+                                    {% if value is float %}
+                                        {{ value|floatformat:4 }}
+                                    {% else %}
+                                        {{ value }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            {% elif training_error %}
+                <p class="error">Training Error: {{ training_error }}</p>
+            {% else %}
+                <p>No results to display yet. Train a model first.</p>
+            {% endif %}
+        </div>
+    </div>
+
+
+
+    <p style="margin-top: 40px; text-align: center;">
+        <a href="{% url 'project1:index' %}" class="custom-link-button">Upload Another Dataset</a>
+    </p>
+
+{% endblock %}
+
+{% block script %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const plotTypeSelect = document.getElementById('plot_type');
+        const yAxisGroup = document.getElementById('y-axis-group');
+        const groupBySelect = document.getElementById('group_by_feature');
+        const xFeatureSelect = document.getElementById('x_axis_feature');
+        const modelSelect = document.getElementById('model_name');
+        const hyperparametersContainer = document.getElementById('hyperparameters-container');
+
+
+        const numericalColumnNames = JSON.parse(document.getElementById('numerical_cols_json').textContent || document.getElementById('numerical_cols_json').innerHTML);
+        const allModelOptions = JSON.parse(document.getElementById('model_options_json').textContent || document.getElementById('model_options_json').innerHTML);
+        const hyperparameterDefs = JSON.parse(document.getElementById('hyperparameter_defs_json').textContent || document.getElementById('hyperparameter_defs_json').innerHTML);
+
+        const isClassificationProblem = "{{ is_classification_problem|yesno:'true,false' }}" === 'true';
+        const initialSelectedModelName = "{{ selected_model_name }}";
+
+
+        function updatePlotFormVisibility() {
+            const selectedType = plotTypeSelect.value;
+
+            if (selectedType === 'scatter') {
+                yAxisGroup.style.display = 'block';
+            } else {
+                yAxisGroup.style.display = 'none';
+                document.getElementById('y_axis_feature').value = "";
+            }
+
+            if (selectedType === 'histogram') {
+                groupBySelect.value = "";
+            }
+        }
+
+
+        function updateModelOptions() {
+            modelSelect.innerHTML = '';
+            let defaultModelFound = false;
+
+            allModelOptions.forEach(model => {
+                if (isClassificationProblem && model.type === 'classification') {
+                    const option = document.createElement('option');
+                    option.value = model.value;
+                    option.textContent = model.name;
+                    if (model.value === initialSelectedModelName && !defaultModelFound) {
+                        option.selected = true;
+                        defaultModelFound = true;
+                    }
+                    modelSelect.appendChild(option);
+                } else if (!isClassificationProblem && model.type === 'regression') {
+                    const option = document.createElement('option');
+                    option.value = model.value;
+                    option.textContent = model.name;
+                    if (model.value === initialSelectedModelName && !defaultModelFound) {
+                        option.selected = true;
+                        defaultModelFound = true;
+                    }
+                    modelSelect.appendChild(option);
+                }
+            });
+
+            if (!defaultModelFound && modelSelect.options.length > 0) {
+                modelSelect.options[0].selected = true;
+            }
+
+
+            const testSizeInput = document.getElementById('test_size');
+            if (testSizeInput) {
+                testSizeInput.value = "{{ selected_test_size|default:'0.2' }}";
+            }
+
+
+            renderHyperparameters();
+        }
+
+        function renderHyperparameters() {
+            const currentModelValue = modelSelect.value;
+            const params = hyperparameterDefs[currentModelValue] || [];
+            hyperparametersContainer.innerHTML = '';
+
+            params.forEach(param => {
+                const formGroup = document.createElement('div');
+                formGroup.className = 'form-group';
+
+                const label = document.createElement('label');
+                label.htmlFor = `hp_${param.param}`;
+                label.textContent = param.name;
+                if (param.info) {
+                    label.title = param.info;
+                }
+
+                let inputElement;
+                if (param.type === 'int' || param.type === 'float') {
+                    inputElement = document.createElement('input');
+                    inputElement.type = 'number';
+                    inputElement.name = `hp_${param.param}`;
+                    inputElement.id = `hp_${param.param}`;
+                    inputElement.value = param.default;
+                    if (param.min !== undefined) inputElement.min = param.min;
+                    if (param.max !== undefined) inputElement.max = param.max;
+                    if (param.step !== undefined) inputElement.step = param.step;
+                    else inputElement.step = (param.type === 'float' ? 'any' : '1');
+                } else if (param.type === 'bool') {
+                    inputElement = document.createElement('select');
+                    inputElement.name = `hp_${param.param}`;
+                    inputElement.id = `hp_${param.param}`;
+                    const trueOption = document.createElement('option');
+                    trueOption.value = 'True';
+                    trueOption.textContent = 'True';
+                    const falseOption = document.createElement('option');
+                    falseOption.value = 'False';
+                    falseOption.textContent = 'False';
+                    inputElement.appendChild(trueOption);
+                    inputElement.appendChild(falseOption);
+                    inputElement.value = param.default ? 'True' : 'False';
+                } else if (param.type === 'str' && param.options) {
+                    inputElement = document.createElement('select');
+                    inputElement.name = `hp_${param.param}`;
+                    inputElement.id = `hp_${param.param}`;
+                    param.options.forEach(optionValue => {
+                        const option = document.createElement('option');
+                        option.value = optionValue;
+                        option.textContent = optionValue;
+                        inputElement.appendChild(option);
+                    });
+                    inputElement.value = param.default;
+                }
+
+                if (inputElement) {
+                    formGroup.appendChild(label);
+                    formGroup.appendChild(inputElement);
+                    hyperparametersContainer.appendChild(formGroup);
+                }
+            });
+        }
+
+        modelSelect.addEventListener('change', renderHyperparameters);
+
+
+        const modal = document.getElementById("resultsModal");
+        const closeButton = document.querySelector(".close-button");
+        const trainingForm = document.getElementById("training-form");
+        const trainModelButton = document.getElementById("train-model-button");
+        const loadingSpinner = document.getElementById("loadingSpinner");
+
+
+        function showModal() {
+            modal.style.display = "flex";
+        }
+
+
+        function hideModal() {
+            modal.style.display = "none";
+        }
+
+
+        closeButton.addEventListener('click', hideModal);
+
+
+        window.addEventListener('click', function(event) {
+            if (event.target == modal) {
+                hideModal();
+            }
+        });
+
+
+        trainingForm.addEventListener('submit', function(event) {
+            if (event.submitter && event.submitter.id === 'train-model-button') {
+                trainModelButton.disabled = true;
+                trainModelButton.textContent = "Training...";
+                loadingSpinner.style.display = 'flex';
+            }
+        });
+
+
+        {% if evaluation_results or training_error %}
+            showModal();
+        {% endif %}
+
+
+        updatePlotFormVisibility();
+        updateModelOptions();
+    });
+</script>
+
+{{ numerical_column_names|json_script:"numerical_cols_json" }}
+{{ model_options|json_script:"model_options_json" }}
+{{ hyperparameter_defs|json_script:"hyperparameter_defs_json" }}
+{% endblock script %}

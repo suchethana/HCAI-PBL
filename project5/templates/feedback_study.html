@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'project5/style.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+  <h1>Human Feedback Study</h1>
+
+  <div class="content-box">
+    <h2>Choose Your Preferred Trajectory</h2>
+    <p><strong>Which of these two trajectories is better?</strong> Remember, the goal is to teach the mouse to
+      avoid organic cheese and get standard cheese instead.</p>
+  </div>
+
+  <form method="post" action="{% url 'project5:collect_feedback' %}">
+    {% csrf_token %}
+
+    <div class="trajectory-comparison-container">
+      <!-- Trajectory 1 -->
+      <div class="feedback-trajectory">
+        <h2>Trajectory 1</h2>
+        <p><strong>Total Reward:</strong> {{ total_reward1|floatformat:2 }}</p>
+
+        {% for step in trajectory1 %}
+          <div class="trajectory-step">
+            <h4>Step {{ step.step }}</h4>
+            <p><strong>Action:</strong> {% firstof step.action step.action_name %}</p>
+            <p><strong>Reward:</strong> {{ step.reward }}</p>
+            {{ step.grid_html|safe }}
+          </div>
+        {% endfor %}
+
+        <div class="feedback-choice-container">
+          <label class="preference-option">
+            <input type="radio" name="preference" value="1" required>
+            <span>I prefer this one</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Trajectory 2 -->
+      <div class="feedback-trajectory">
+        <h2>Trajectory 2</h2>
+        <p><strong>Total Reward:</strong> {{ total_reward2|floatformat:2 }}</p>
+
+        {% for step in trajectory2 %}
+          <div class="trajectory-step">
+            <h4>Step {{ step.step }}</h4>
+            <p><strong>Action:</strong> {% firstof step.action step.action_name %}</p>
+            <p><strong>Reward:</strong> {{ step.reward }}</p>
+            {{ step.grid_html|safe }}
+          </div>
+        {% endfor %}
+
+        <div class="feedback-choice-container">
+          <label class="preference-option">
+            <input type="radio" name="preference" value="2" required>
+            <span>I prefer this one</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="button-container">
+      <button type="submit" class="action-button primary-button">Submit Feedback</button>
+    </div>
+  </form>
+
+  <a href="{% url 'project5:index' %}" class="custom-link-button">Go back to Project 5 Home</a>
+</div>
+{% endblock %}

@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'project2/style.css'%}">
+{% endblock %}
+
+{% block content %}
+    <div class="title-box">
+        <h2 class="page-title">Active Learning for Text Classification</h2>
+    </div>
+
+    <div class="main-content-card">
+        <h3>1. Baseline Supervised Learning Classifier</h3>
+        <p>
+            This section focuses on training a traditional supervised text classifier on the full IMDB 50k movie reviews dataset. The goal is to predict if a review is positive or negative.
+        </p>
+        <p>
+            Our proposed classifier consists of two components:
+            <ul>
+                <li><strong>Text Representation:</strong> We use a TF-IDF Vectorizer to convert raw text reviews into numerical feature vectors. This module captures the importance of words in a document relative to the entire corpus.</li>
+                <li><strong>Classification Module:</strong> A Logistic Regression model is employed to classify the sentiment (positive/negative) based on the TF-IDF features.</li>
+            </ul>
+        </p>
+        <p>
+            This classifier is trained on the whole labeled training dataset, and its test accuracy will be reported. This score provides the target for the active learning part.
+        </p>
+
+        <form method="post" action="{% url 'project2:train_baseline_classifier' %}" class="action-form" id="train-form">
+            {% csrf_token %}
+            <button type="submit" class="action-button primary-button" id="train-button">Launch Baseline Training</button>
+        </form>
+        <p><em>(Note: Training on 50k reviews can take several minutes depending on your system.)</em></p>
+
+        <form method="post" action="{% url 'project2:load_pretrained_classifier' %}" class="action-form">
+            {% csrf_token %}
+            <button type="submit" class="action-button secondary-button">Load Pre-trained Model</button>
+        </form>
+
+        <div id="training-status" class="training-status">
+            <div class="spinner"></div>
+            <p id="status-message">Initializing training...</p>
+        </div>
+
+        {% if accuracy %}
+            <div class="result-message success">
+                <p class="message-text">Baseline Classifier trained successfully! Test Accuracy: {{ accuracy }}</p>
+                <p><i>(This classifier will provide the target score for the active learning part)</i></p>
+            </div>
+        {% elif message_lines %}
+            <div class="result-message info">
+                {% for line in message_lines %}
+                    <p class="message-text">{{ line }}</p>
+                {% endfor %}
+            </div>
+        {% elif message %}
+            <div class="result-message info">
+                <p class="message-text">{{ message|safe }}</p>
+            </div>
+        {% elif error %}
+            <div class="result-message error">
+                <p class="message-text">Error: {{ error|safe }}</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="main-content-card" style="margin-top: 30px;">
+        <h3>2. Pool-based Active Learning</h3>
+        <p>
+            Here, we implement various active learning strategies to train a classifier with fewer labels. Labels are considered unavailable during the training step.
+        </p>
+
+        <div class="result-message info">
+    <p class="message-text"><strong>Active Learning will stop when one of the following conditions is met:</strong></p>
+    <ul class="al-stop-list">
+        <li>The unlabeled data pool is exhausted.</li>
+        <li>A maximum of 100 queries have been made.</li>
+        <li>A test accuracy of 95% is achieved.</li>
+    </ul>
+</div>
+
+        <form method="post" action="{% url 'project2:active_learn_init' %}" class="action-form" id="init-al-form">
+            {% csrf_token %}
+            <button type="submit" class="action-button primary-button" id="init-al-button">Initialize Active Learning</button>
+        </form>
+        <p><em>(Initializes labeled/unlabeled pools from the training set; labels are hidden except when queried.)</em></p>
+
+        {% if al_initialized %}
+            <hr>
+            <h4>Active Learning Loop:</h4>
+            <p>Labeled samples: {{ num_labeled }}. Unlabeled pool: {{ num_unlabeled }}. Queries so far: {{ num_queries_made }}.</p>
+
+            <form method="post" action="{% url 'project2:active_learn_query' %}" class="action-form" id="query-al-form">
+                {% csrf_token %}
+                <div class="form-group" >
+                    <label for="query_strategy">Strategy:</label>
+                    <select name="query_strategy" id="query_strategy">
+                        <option value="least_confidence">Least Confidence Sampling</option>
+                        <option value="random">Random Sampling</option>
+                        <option value="uncertainty_random_mixture">Uncertainty + Random Mixture</option>
+                    </select>
+                </div>
+                <button type="submit" class="action-button primary-button" id="query-button">Query Next Sample</button>
+            </form>
+
+            <form method="post" action="{% url 'project2:active_learn_reset' %}" class="action-form">
+                {% csrf_token %}
+                <button type="submit" class="action-button secondary-button" id="reset-button">Reset Active Learning</button>
+            </form>
+
+            <div id="accuracyPlotContainer" class="active-learning-plot-container" style="margin-top: 30px; display: none;">
+                <h4>Accuracy Progress:</h4>
+                <div id="accuracyPlot" class="plot-placeholder"></div>
+            </div>
+        {% endif %}
+    </div>
+
+    <p style="margin-top: 40px;">
+        <a href="{% url 'home:index' %}" class="custom-link-button">Back to Home</a>
+    </p>
+
+{% endblock %}
+
+{% block script %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const trainForm = document.getElementById('train-form');
+        const trainButton = document.getElementById('train-button');
+        const trainingStatusDiv = document.getElementById('training-status');
+        const statusMessageP = document.getElementById('status-message');
+
+        const initAlForm = document.getElementById('init-al-form');
+        const initAlButton = document.getElementById('init-al-button');
+        const queryAlForm = document.getElementById('query-al-form');
+        const queryButton = document.getElementById('query-button');
+
+        function showLoading(button, message) {
+            button.disabled = true;
+            button.textContent = "Processing...";
+            trainingStatusDiv.style.display = 'flex';
+            statusMessageP.textContent = message;
+        }
+
+        trainForm.addEventListener('submit', function(event) {
+            showLoading(trainButton, "Loading IMDB dataset and training baseline classifier...");
+        });
+
+        if (initAlForm) {
+            initAlForm.addEventListener('submit', function(event) {
+                showLoading(initAlButton, "Initializing active learning session...");
+            });
+        }
+
+        if (queryAlForm) {
+            queryAlForm.addEventListener('submit', function(event) {
+                showLoading(queryButton, "Querying next sample(s) and retraining model...");
+            });
+        }
+
+        const accuracyHistoryJson = document.getElementById('al_accuracy_history_json');
+        let accuracyHistory = [];
+        if (accuracyHistoryJson) {
+            try {
+                accuracyHistory = JSON.parse(accuracyHistoryJson.textContent || accuracyHistoryJson.innerHTML);
+            } catch (e) {
+                console.error("Error parsing AL accuracy history:", e);
+            }
+        }
+
+        const plotCanvas = document.createElement('canvas');
+        plotCanvas.id = 'accuracyChart';
+        const plotContainer = document.getElementById('accuracyPlot');
+        if (plotContainer && accuracyHistory.length > 0) {
+            document.getElementById('accuracyPlotContainer').style.display = 'block';
+            plotContainer.appendChild(plotCanvas);
+
+            const queries = accuracyHistory.map(item => item.queries);
+            const accuracies = accuracyHistory.map(item => item.accuracy);
+
+            const ctx = plotCanvas.getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: queries,
+                    datasets: [{
+                        label: 'Test Accuracy',
+                        data: accuracies,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Number of Queries' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Accuracy' },
+                            min: 0,
+                            max: 1
+                        }
+                    },
+                    plugins: { legend: { display: true } }
+                }
+            });
+        }
+    });
+</script>
+
+{{ active_learning_accuracy_history|json_script:"al_accuracy_history_json" }}
+{% endblock script %}

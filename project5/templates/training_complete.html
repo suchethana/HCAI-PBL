@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'project5/style.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+  <h1>REINFORCE Algorithm Training Status</h1>
+
+  <div class="explanation-box">
+    <p>
+      The reward shown for each step is the <strong>immediate reward</strong> received for that action.
+      The REINFORCE algorithm updates the policy using the sum of rewards, but we display per-step rewards here.
+    </p>
+  </div>
+
+  <div class="content-box">
+    <p class="result-message success-message-text">{{ message }}</p>
+  </div>
+
+  {# Graphs shown in a modal on demand #}
+  {% if learning_curve_img or reward_hist_img %}
+    <div class="button-container">
+      <button class="action-button primary-button" onclick="showModal('graphModal')">
+        View Graphs
+      </button>
+    </div>
+  {% endif %}
+
+  {% if trajectories %}
+    <div class="content-box">
+      <h2>Example Trajectories with Trained Policy</h2>
+
+      {# 2-column, responsive (same grid as feedback page) #}
+      <div class="trajectory-comparison-container">
+        {% for trajectory in trajectories %}
+          <div class="trajectory-box feedback-trajectory">
+            <h3>Trajectory {{ forloop.counter }}</h3>
+            <div class="trajectory-steps">
+              {% for step in trajectory %}
+                <div class="trajectory-step">
+                  <h4>Step {{ step.step }}</h4>
+                  <p><strong>Action:</strong> {% firstof step.action step.action_name %}</p>
+                  <p><strong>Reward:</strong> {{ step.reward }}</p>
+
+                  {% if step.grid_html %}
+                    <div class="grid-display-alt">{{ step.grid_html|safe }}</div>
+                  {% else %}
+                    <pre class="grid-display">{{ step.grid_output }}</pre>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+  <a href="{% url 'project5:index' %}" class="custom-link-button">Go back to Project 5 Home</a>
+</div>
+
+{# ===== Graph Modal ===== #}
+{% if learning_curve_img or reward_hist_img %}
+<div id="graphModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Training Metrics</h3>
+      <span class="close-button" onclick="closeModal('graphModal')">&times;</span>
+    </div>
+    <div class="modal-body">
+      {% if learning_curve_img %}
+        <h4>Learning Curve (Reward vs Episode)</h4>
+        <img class="chart-img" alt="Learning Curve"
+             src="data:image/png;base64,{{ learning_curve_img }}">
+      {% endif %}
+      {% if reward_hist_img %}
+        <h4>Reward Distribution (Trained Policy)</h4>
+        <img class="chart-img" alt="Reward Distribution"
+             src="data:image/png;base64,{{ reward_hist_img }}">
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block script %}
+<script>
+  function showModal(id){var el=document.getElementById(id); if(el) el.style.display='block';}
+  function closeModal(id){var el=document.getElementById(id); if(el) el.style.display='none';}
+  window.onclick=function(e){ if(e.target.classList && e.target.classList.contains('modal')){ e.target.style.display='none'; } }
+</script>
+{% endblock %}

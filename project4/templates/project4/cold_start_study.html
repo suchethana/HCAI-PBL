@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'project4/style.css' %}">
+<style>
+  .rating-input-info{
+    font-size:.95em; color:#455; margin:6px 0 12px; font-style:italic;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content-card study-page-card">
+  <h3 class="study-intro-heading">Help Us Understand Your Tastes!</h3>
+
+  <hr class="study-intro-separator">
+
+  {% if error %}
+    <div class="result-message error"><p class="message-text">Error: {{ error }}</p></div>
+
+  {% elif post_rating_message %}
+    <!-- TRUE impact shown AFTER rating submit (optional but recommended) -->
+    <div class="result-message info">
+      <p class="message-text">{{ post_rating_message|safe }}</p>
+    </div>
+    <div class="action-form">
+      <a href="{% url 'project4:start_study' %}" class="action-button primary-button">Next Movie</a>
+    </div>
+
+  {% elif message %}
+    <div class="result-message info"><p class="message-text">{{ message }}</p></div>
+    <div class="action-form">
+      <a href="{% url 'project4:start_study' %}" class="action-button primary-button">Start New Study</a>
+    </div>
+
+  {% else %}
+    <h3>Movie {{ current_movie_display_number }} of {{ total_movies_to_ask }}</h3>
+
+    {% if current_movie %}
+      <h4>{{ display_title }}</h4>
+      <p class="genres">Genres: {{ current_movie.genres }}</p>
+
+      <form method="post" action="{% url 'project4:rate_movie' %}" class="rating-form" id="ratingForm">
+        {% csrf_token %}
+        <input type="hidden" name="movie_id" value="{{ current_movie.movieId }}">
+
+        <label for="rating">Your Rating (0.5 - 5.0):</label>
+        <input type="number" step="0.5" min="0.5" max="5.0" name="rating" id="rating" required>
+
+        <!-- ✅ dynamic pre-impact hint (before submit) -->
+        <p class="rating-input-info">
+          {{ pre_impact_hint|safe }}
+        </p>
+
+        <button type="submit" class="action-button primary-button">Submit Rating</button>
+      </form>
+    {% else %}
+      <p>No movies to display. Please try again or check data setup.</p>
+    {% endif %}
+  {% endif %}
+</div>
+
+<a href="{% url 'home:index' %}" class="custom-link-button">Back to Home</a>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-content">
+    <div class="loading-spinner"></div>
+    <p class="loading-message" id="loadingMessage">Loading…</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+  const f = document.getElementById('ratingForm');
+  if (f) {
+    f.addEventListener('submit', () => {
+      document.getElementById('loadingOverlay').classList.add('active');
+    });
+  }
+</script>
+{% endblock script %}
