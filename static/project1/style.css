@@ -22,33 +22,25 @@ body {
     background-attachment: fixed;
 }
 
-
 .main-layout-container {
-
     max-width: 600px;
     width: 90%;
     padding: 40px;
-
     background-color: #ffffff;
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     box-sizing: border-box;
     min-height: 500px;
-
-
     margin: auto;
     margin-right: -120%;
     margin-bottom: 50px
 }
 
-
 .form-section {
-
     width: 100%;
     padding: 0;
     box-sizing: border-box;
 }
-
 
 .box {
     background-color: transparent;
@@ -68,7 +60,6 @@ h2 {
     color: #1f3a5f;
     margin-bottom: 25px;
 }
-
 
 form {
     display: flex;
@@ -155,7 +146,6 @@ input[type="file"] {
     border-radius: 5px;
 }
 
-
 .page-title {
     font-size: 2.8em;
     color: #34495e;
@@ -192,7 +182,6 @@ input[type="file"] {
     0% { opacity: 0; }
     100% { opacity: 1; }
 }
-
 
 .data-table-container {
     display: none;
@@ -245,8 +234,6 @@ table thead tr:first-child th:first-child { border-top-left-radius: 8px; }
 table thead tr:first-child th:last-child { border-top-right-radius: 8px; }
 table tbody tr:last-child td:first-child { border-bottom-left-radius: 8px; }
 table tbody tr:last-child td:last-child { border-bottom-right-radius: 8px; }
-
-
 
 .plot-controls-row-container {
     display: flex;
@@ -305,7 +292,6 @@ table tbody tr:last-child td:last-child { border-bottom-right-radius: 8px; }
     margin: 0 auto;
 }
 
-
 .training-form {
     background-color: #fcfcfc;
     border: 1px solid #e9ecef;
@@ -351,7 +337,7 @@ table tbody tr:last-child td:last-child { border-bottom-right-radius: 8px; }
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292%22%20height%3D%22292%22%3E%3Cpath%20fill%3D%22%23007bff%22%20d%3D%22M287%2C197.8a12.8%2C12.8%2C0%2C0%2C1%2C-18.1%2C0L146%2C62.8L23.1%2C197.8a12.8%2C12.8%2C0%2C0%2C1%2C-18.1%2C0a12.8%2C12.8%2C0%2C0%2C1%2C0%2C18.1L146%2C27.9L287%2C179.7a12.8%2C12.8%2C0%2C0%2C1%2C0%2C18.1z%22%2F%3E%3C%2Fsvg%3E'); /* Custom arrow for select */
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292%22%20height%3D%22292%22%3E%3Cpath%20fill%3D%22%23007bff%22%20d%3D%22M287%2C197.8a12.8%2C12.8%2C0%2C0%2C1%2C-18.1%2C0L146%2C62.8L23.1%2C197.8a12.8%2C12.8%2C0%2C0%2C1%2C-18.1%2C0a12.8%2C12.8%2C0%2C0%2C1%2C0%2C18.1L146%2C27.9L287%2C179.7a12.8%2C12.8%2C0%2C0%2C1%2C0%2C18.1z%22%2F%3E%3C%2Fsvg%3E');
     background-repeat: no-repeat;
     background-position: right 0.7em top 50%;
     background-size: 0.65em auto;
@@ -427,7 +413,6 @@ table tbody tr:last-child td:last-child { border-bottom-right-radius: 8px; }
     background-color: #f1f1f1;
 }
 
-
 .modal {
     display: none;
     position: fixed;
@@ -457,13 +442,11 @@ table tbody tr:last-child td:last-child { border-bottom-right-radius: 8px; }
     animation-duration: 0.4s;
 }
 
-
 .modal-results-table {
     padding: 10px;
     margin-top: 15px;
     margin-bottom: 0;
 }
-
 
 .close-button {
     color: #aaa;
@@ -482,12 +465,10 @@ table tbody tr:last-child td:last-child { border-bottom-right-radius: 8px; }
     text-decoration: none;
 }
 
-
 @keyframes animatetop {
     from {top: -300px; opacity: 0}
     to {top: 0; opacity: 1}
 }
-
 
 .loading-spinner {
     display: none;
@@ -521,10 +502,7 @@ table tbody tr:last-child td:last-child { border-bottom-right-radius: 8px; }
     100% { transform: rotate(360deg); }
 }
 
-
-
 @media (max-width: 768px) {
-
     .main-layout-container {
         flex-direction: column;
         padding: 20px;
@@ -542,8 +520,6 @@ table tbody tr:last-child td:last-child { border-bottom-right-radius: 8px; }
         padding: 10px 20px;
         font-size: 0.9em;
     }
-
-
     .plot-controls-row-container {
         flex-direction: column;
         gap: 20px;
@@ -572,7 +548,6 @@ table tbody tr:last-child td:last-child { border-bottom-right-radius: 8px; }
     .visualization-form button[type="submit"] {
         max-width: 100%;
     }
-
     .modal-content {
         width: 95%;
         padding: 20px;

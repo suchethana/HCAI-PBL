@@ -100,7 +100,7 @@ def move(action, grid):
     mouse_pos = tuple(np.argwhere(grid == MOUSE)[0])
     new_pos = (mouse_pos[0] + delta[0], mouse_pos[1] + delta[1])
 
-    # Check bounds and wall
+    
     if 0 <= new_pos[0] < GRID_SIZE and 0 <= new_pos[1] < GRID_SIZE:
         if grid[new_pos] != WALL:
             grid[mouse_pos] = EMPTY

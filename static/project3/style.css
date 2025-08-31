@@ -19,7 +19,6 @@ body {
     background-blend-mode: overlay;
 }
 
-
 .title-box {
     background-color: #ffffff;
     border-radius: 15px;
@@ -32,7 +31,6 @@ body {
     box-sizing: border-box;
     animation: fadeInDown 0.8s ease-out forwards;
     opacity: 0;
-
 }
 
 .page-title {
@@ -162,7 +160,6 @@ body {
     background-color: #5a6268;
 }
 
-
 .tree-text-output {
     text-align: left;
     background-color: #f8f8f8;
@@ -202,7 +199,6 @@ body {
     margin-top: 5px;
 }
 
-
 .modal {
     display: none;
     position: fixed;
@@ -234,7 +230,6 @@ body {
     overflow-y: auto;
     max-height: 90vh;
 }
-
 
 .modal-content.large-modal-content {
     max-width: 95%;
@@ -315,7 +310,6 @@ body {
     100% { transform: rotate(360deg); }
 }
 
-
 .form-group {
     margin-bottom: 20px;
     width: 100%;
@@ -376,9 +370,6 @@ body {
     max-width: 250px;
 }
 
-
-
-
 @media (max-width: 768px) {
 
     .main-content-card {
@@ -404,7 +395,6 @@ body {
     }
 }
 
-/* === NEW: Sparse DT delta + history styling === */
 #sparse-dt-delta {
     margin-top: 8px;
     font-size: 0.95rem;
@@ -440,7 +430,6 @@ body {
   margin-top: 12px;
 }
 
-/* --- Sticky action bars for slider sections --- */
 .sticky-action {
   position: sticky;
   top: 10px;
@@ -453,7 +442,6 @@ body {
   margin-bottom: 16px;
 }
 
-/* --- Anchor links on headings --- */
 .anchor-link {
   margin-left: 8px;
   text-decoration: none;
@@ -462,7 +450,6 @@ body {
 }
 .anchor-link:hover { color: #4c6c8a; }
 
-/* --- Clear comparisons link --- */
 .link-clear {
   margin-left: 10px;
   font-size: 0.9em;
@@ -471,7 +458,6 @@ body {
 }
 .link-clear:hover { color: #374151; }
 
-/* --- Verify chip for CFs --- */
 .verify-chip {
   display: inline-block;
   padding: 4px 10px;
@@ -483,7 +469,6 @@ body {
   margin: 6px 0 4px 0;
 }
 
-/* --- CF diffs --- */
 .cf-diff { margin-top: 8px; }
 .cf-diff-title {
   font-weight: 700;

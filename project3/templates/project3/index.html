@@ -7,7 +7,7 @@
 
 {% block content %}
 <div class="title-box">
-  <h2 class="page-title">Project 3: Explainability</h2>
+  <h2 class="page-title">Explainability</h2>
 </div>
 
 {% if error %}
@@ -16,11 +16,8 @@
 </div>
 {% endif %}
 
-<!-- =========================
-     1) Decision Tree
-========================== -->
 <div class="main-content-card">
-  <h3 id="dt">1. Decision Tree Interpretability
+  <h3 id="dt">Decision Tree Interpretability
     <a class="anchor-link" href="#dt">#</a>
   </h3>
   <p>This section trains a Decision Tree classifier on the Palmer Penguins dataset and displays its characteristics.</p>
@@ -55,16 +52,12 @@
   {% endif %}
 </div>
 
-<!-- =========================
-     2) Sparse Decision Tree
-========================== -->
 <div class="main-content-card" style="margin-top: 30px;">
-  <h3 id="sparse-dt">2. Model Sparsity with Scikit-learn
+  <h3 id="sparse-dt">Model Sparsity with Scikit-learn
     <a class="anchor-link" href="#sparse-dt">#</a>
   </h3>
   <p>Use the slider to control λ. A higher λ gives a simpler tree; track how accuracy and complexity change.</p>
 
-  <!-- Sticky action bar -->
   <form method="post" action="{% url 'project3:train_sparse_dt_model' %}" class="action-form sticky-action" id="train-sparse-dt-form">
     {% csrf_token %}
     <div class="form-group" style="display:flex;align-items:center;gap:10px;">
@@ -86,19 +79,16 @@
     <p class="message-text">λ: {{ sparse_dt_results.lambda_value }} | Max Depth: {{ sparse_dt_results.max_depth }}</p>
     <p class="message-text">Accuracy: {{ sparse_dt_results.accuracy|floatformat:"4" }} | Leaves: {{ sparse_dt_results.num_leaves }}</p>
 
-    <!-- Delta message gets filled by JS -->
     <p id="sparse-dt-delta" class="message-text" style="margin-top:8px;font-weight:700;"></p>
 
     <div class="compare-wrap">
       <button type="button" id="compareBtn" class="action-button primary-button">Compare previous runs</button>
-      <!-- Clear comparisons link -->
       <a href="#" id="clearCompare" class="link-clear" title="Clear saved comparisons">Clear comparisons</a>
     </div>
     <div id="sparse-dt-history-section" class="compare-section" style="display:none;">
       <div id="sparse-dt-history"></div>
     </div>
 
-    <!-- Provide current run to JS -->
     <script type="application/json" id="sparse-dt-last-run">
     {
       "lambda": {{ sparse_dt_results.lambda_value }},
@@ -123,16 +113,12 @@
   {% endif %}
 </div>
 
-<!-- =========================
-     3) Sparse Logistic Regression
-========================== -->
 <div class="main-content-card" style="margin-top: 30px;">
-  <h3 id="sparse-lr">3. Sparse Logistic Regression
+  <h3 id="sparse-lr">Sparse Logistic Regression
     <a class="anchor-link" href="#sparse-lr">#</a>
   </h3>
   <p>Increase λ (decrease C=1/λ) to encourage sparsity in the coefficients.</p>
 
-  <!-- Sticky action bar -->
   <form method="post" action="{% url 'project3:train_sparse_lr_model' %}" class="action-form sticky-action" id="train-sparse-lr-form">
     {% csrf_token %}
     <div class="form-group" style="display:flex;align-items:center;gap:10px;">
@@ -213,11 +199,8 @@
   {% endif %}
 </div>
 
-<!-- =========================
-     4) Counterfactual Explanations
-========================== -->
 <div class="main-content-card" style="margin-top: 30px;">
-  <h3 id="cf">4. Counterfactual Explanations
+  <h3 id="cf">Counterfactual Explanations
     <a class="anchor-link" href="#cf">#</a>
   </h3>
   <p>Pick an example index and a target species to see the closest counterfactuals.</p>
@@ -257,21 +240,14 @@
       {% for cf in counterfactual_results.counterfactuals %}
       <li data-cf-index="{{ forloop.counter0 }}">
         <p><strong>Distance:</strong> {{ cf.distance|floatformat:"4" }}</p>
-
-        <!-- Verify chip (predicted label • probability) -->
         <p class="verify-chip">
           {{ cf.predicted_label }} • {{ cf.predicted_prob|floatformat:"3" }}
         </p>
-
         <pre>{{ cf.x }}</pre>
-
-        <!-- What changed? (diffs rendered by JS) -->
         <div class="cf-diff" data-cf-index="{{ forloop.counter0 }}"></div>
       </li>
       {% endfor %}
     </ul>
-
-    <!-- Expose payload for diff rendering -->
     {{ counterfactual_results|json_script:"cf_results_payload" }}
   </div>
   {% endif %}
@@ -281,7 +257,6 @@
   <a href="{% url 'home:index' %}" class="custom-link-button">Back to Home</a>
 </p>
 
-<!-- Image Modal -->
 <div id="treeModal" class="modal">
   <div class="modal-content large-modal-content">
     <span class="close-button" id="treeModalCloseButton">&times;</span>
@@ -297,7 +272,6 @@
 {% block script %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  /* Loading overlays */
   const dtTrainingStatusDiv = document.getElementById('dt-training-status');
   const dtStatusMessageP = document.getElementById('dt-status-message');
   const sparseDtTrainingStatusDiv = document.getElementById('sparse-dt-training-status');
@@ -318,7 +292,6 @@ document.addEventListener('DOMContentLoaded', function () {
     statusMessageElement.textContent = message;
   }
 
-  /* Decision Tree form */
   const trainDtForm = document.getElementById('train-dt-form');
   const trainDtButton = document.getElementById('train-dt-button');
   if (trainDtForm) {
@@ -328,7 +301,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  /* Sparse DT controls */
   const lambdaSliderDt = document.getElementById('lambda_slider_dt');
   const lambdaValueDisplayDt = document.getElementById('lambda_value_display_dt');
   const trainSparseDtForm = document.getElementById('train-sparse-dt-form');
@@ -347,7 +319,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  /* Sparse LR controls */
   const lambdaSliderLr = document.getElementById('lambda_slider_lr');
   const lambdaValueDisplayLr = document.getElementById('lambda_value_display_lr');
   const trainSparseLrForm = document.getElementById('train-sparse-lr-form');
@@ -366,7 +337,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  /* Counterfactuals form */
   const generateCfForm = document.getElementById('generate-cf-form');
   const generateCfButton = document.getElementById('generate-cf-button');
   if (generateCfForm) {
@@ -375,7 +345,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  /* Modal image viewer */
   const treeModal = document.getElementById('treeModal');
   const treeModalCloseButton = document.getElementById('treeModalCloseButton');
   const modalTreeGraphImg = document.querySelector('.modal-tree-graph-img');
@@ -392,7 +361,6 @@ document.addEventListener('DOMContentLoaded', function () {
   if (treeModalCloseButton) treeModalCloseButton.addEventListener('click', function () { treeModal.style.display = 'none'; });
   window.addEventListener('click', function (e) { if (e.target === treeModal) treeModal.style.display = 'none'; });
 
-  /* ===== Sparse DT: history/delta/compare ===== */
   const STORAGE_KEY = 'project3_sparseDtRuns';
   const deltaEl = document.getElementById('sparse-dt-delta');
   const historyWrap = document.getElementById('sparse-dt-history');
@@ -477,7 +445,6 @@ document.addEventListener('DOMContentLoaded', function () {
     };
   }
 
-  /* Clear comparisons link */
   const clearCompare = document.getElementById('clearCompare');
   if (clearCompare) {
     clearCompare.addEventListener('click', function (e) {
@@ -488,7 +455,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  /* ===== Counterfactual "What changed?" diffs ===== */
   const cfPayloadEl = document.getElementById('cf_results_payload');
   if (cfPayloadEl) {
     try {

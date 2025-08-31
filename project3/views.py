@@ -280,14 +280,12 @@ def generate_counterfactuals(request):
                 X, y, test_size=0.3, random_state=42, stratify=y
             )
 
-            # model used to evaluate counterfactuals
             C = 1.0
             clf = LogisticRegression(
                 random_state=42, penalty='l1', C=C, solver='liblinear', multi_class='ovr'
             )
             clf.fit(X_train, y_train)
 
-            # safe index wrap
             n_test = len(X_test)
             example_index = example_index % max(1, n_test)
 
@@ -295,7 +293,6 @@ def generate_counterfactuals(request):
             original_pred = clf.predict(example_x)[0]
             original_label = class_names[original_pred]
 
-            # MAD-weighted L1 distance
             X_ref = X_train.to_numpy()
             mad = np.median(np.abs(X_ref - np.median(X_ref, axis=0)), axis=0)
             mad = np.where(mad == 0, 1.0, mad)
@@ -303,7 +300,6 @@ def generate_counterfactuals(request):
             def mad_weighted_l1(a, b):
                 return float(np.sum(np.abs(a - b) / mad))
 
-            # random search with progressive noise scales
             k = 3
             counterfactuals = []
             rng = np.random.default_rng(42)
@@ -321,7 +317,6 @@ def generate_counterfactuals(request):
                 if len(counterfactuals) >= k:
                     break
 
-            # fallback: nearest predicted-target point from training set
             if not counterfactuals:
                 X_train_np = X_train.to_numpy()
                 preds_train = clf.predict(X_train_np)
@@ -336,7 +331,6 @@ def generate_counterfactuals(request):
                 for idx in order:
                     counterfactuals.append({'x': candidates[idx].reshape(1, -1), 'distance': float(dists[idx])})
 
-            # sort and keep top-k; also attach verify chips (predicted class + prob)
             counterfactuals.sort(key=lambda cf: cf['distance'])
             best = counterfactuals[:k]
 
@@ -358,8 +352,8 @@ def generate_counterfactuals(request):
                 'original_x': example_x.tolist(),
                 'original_label': original_label,
                 'target_label': class_names[target_label],
-                'feature_names': features,        # needed for diffs
-                'counterfactuals': cf_out,        # now includes verify chip info
+                'feature_names': features,
+                'counterfactuals': cf_out,
             }
             request.session.modified = True
 

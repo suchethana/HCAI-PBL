@@ -17,12 +17,7 @@ from scipy.optimize import minimize
 from sklearn.decomposition import TruncatedSVD
 
 from .models import UserStudyData
-# If you have a Movie model, import it; otherwise you’re using CSV-only flow.
-# from .models import Movie
 
-# ---------------------------
-# Paths / Globals
-# ---------------------------
 MOVIELENS_MOVIES_PATH = os.path.join(settings.MOVIELENS_DATA_PATH, 'movies.csv')
 MOVIELENS_RATINGS_PATH = os.path.join(settings.MOVIELENS_DATA_PATH, 'ratings.csv')
 
@@ -45,9 +40,6 @@ MAX_RATING_SCALE = 5.0
 
 TOTAL_MOVIES = 10
 
-# ---------------------------
-# Utilities
-# ---------------------------
 def format_movie_title(title):
     match = re.match(r'^(.*), (The|A|An) \((\d{4})\)$', title)
     if match:
@@ -188,9 +180,6 @@ def predict_recommendations(user_latent_factor, movies_df, item_factors, user_ra
         })
     return top
 
-# ---------------------------
-# Dynamic pre-impact hint (new)
-# ---------------------------
 def make_pre_impact_hint(current_movie_row, movies_df, user_ratings_list):
     """
     Build the pre-submit hint under the input, based on whether the movie’s
@@ -200,7 +189,6 @@ def make_pre_impact_hint(current_movie_row, movies_df, user_ratings_list):
     genres_raw = current_movie_row.get('genres', '')
     current_movie_genres = set(genres_raw.split('|')) if genres_raw else set()
 
-    # collect genres from previously rated movies
     rated_genres = set()
     if user_ratings_list:
         rated_movie_ids = [item['movieId'] for item in user_ratings_list]
@@ -211,7 +199,6 @@ def make_pre_impact_hint(current_movie_row, movies_df, user_ratings_list):
 
     new_genres = current_movie_genres - rated_genres
 
-    # text
     genres_text = ", ".join(sorted(current_movie_genres)) if current_movie_genres else "these genres"
     if new_genres:
         return format_html(
@@ -227,9 +214,6 @@ def make_pre_impact_hint(current_movie_row, movies_df, user_ratings_list):
             genres_text
         )
 
-# ---------------------------
-# Views
-# ---------------------------
 def index(request):
     return render(request, 'project4/index.html')
 
@@ -261,9 +245,7 @@ def rate_movie(request):
     if movies_df.empty:
         return render(request, 'project4/cold_start_study.html', {'error': 'Movie data not found.'})
 
-    # Make sure model is trained/loaded
     if _V_matrix is None or _movie_id_map is None:
-        # You can call train_matrix_factorization_model() here if desired.
         return render(request, 'project4/cold_start_study.html', {'error': 'Recommendation system not initialized.'})
 
     if request.method == 'POST':
@@ -280,7 +262,6 @@ def rate_movie(request):
 
         movies_asked_ids = request.session.get('movies_asked_ids', [])
         if request.session['current_movie_index'] >= len(movies_asked_ids):
-            # Persist session ratings
             session_id = request.session.session_key
             group = request.session.get('group', 'B')
             data_entry, created = UserStudyData.objects.get_or_create(
@@ -295,7 +276,6 @@ def rate_movie(request):
 
         return HttpResponseRedirect(reverse('project4:rate_movie'))
 
-    # ---- GET branch: build page with pre-impact hint ----
     current_movie_index_in_session = request.session.get('current_movie_index', 0)
     movies_asked_ids_in_session = request.session.get('movies_asked_ids', [])
 
@@ -308,7 +288,6 @@ def rate_movie(request):
             display_title = current_movie.get('formatted_title', current_movie['title'])
 
             user_ratings_data = request.session.get('current_user_ratings', [])
-            # Build the dynamic pre-impact hint
             pre_hint = make_pre_impact_hint(current_movie, movies_df, user_ratings_data)
 
             context = {
@@ -316,9 +295,7 @@ def rate_movie(request):
                 'current_movie_index': current_movie_index_in_session,
                 'total_movies_to_ask': len(movies_asked_ids_in_session),
                 'current_movie_display_number': current_movie_index_in_session + 1,
-                # ✅ new: pre-impact hint for the line under the input
                 'pre_impact_hint': pre_hint,
-                # for backward compatibility: if your template still uses impact_message, show the same text there
                 'impact_message': pre_hint,
                 'display_title': display_title,
                 'is_last_movie': current_movie_index_in_session + 1 >= len(movies_asked_ids_in_session),
@@ -393,7 +370,6 @@ def questionnaire(request):
 
 def debrief(request):
     group = request.session.get('group', 'B')
-    # Clear session data
     for key in ['group', 'current_user_ratings', 'movies_asked_ids', 'current_movie_index']:
         if key in request.session:
             del request.session[key]
