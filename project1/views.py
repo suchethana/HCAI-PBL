@@ -24,9 +24,6 @@ import warnings, traceback
 warnings.filterwarnings('ignore', category=FutureWarning)
 warnings.filterwarnings('ignore', category=UserWarning)
 
-# -------------------------
-# Hyperparameter definitions
-# -------------------------
 HYPERPARAMETER_DEFS = {
     "logistic_regression": [
         {"name": "C (Inverse of regularization strength)", "param": "C", "type": "float", "default": 1.0, "min": 0.01, "max": 100.0, "step": 0.01},
@@ -60,9 +57,7 @@ HYPERPARAMETER_DEFS = {
     ],
 }
 
-# -------------------------
-# Helpers
-# -------------------------
+
 def smart_detect_problem_type(df: pd.DataFrame, target_col: str):
     """
     Heuristic:
@@ -97,9 +92,7 @@ def get_manual_override(request):
         return override
     return None
 
-# -------------------------
-# Views
-# -------------------------
+
 def index(request):
     if request.method == 'POST':
         uploaded_file = request.FILES.get('csv_file')
@@ -114,7 +107,7 @@ def index(request):
             data_io = io.StringIO(uploaded_file.read().decode('utf-8'))
             df = pd.read_csv(data_io)
 
-            # Strip a pure ID column if present
+            
             if len(df.columns) > 1 and (
                 df.columns[0].lower() in ['id', 'idx', 'index'] or
                 (pd.api.types.is_numeric_dtype(df.iloc[:, 0]) and
@@ -125,13 +118,13 @@ def index(request):
 
             request.session['df_data'] = df.to_json()
 
-            # sensible defaults for plotting
+            
             numerical_cols = df.select_dtypes(include=['number']).columns.tolist()
             initial_context = {
                 'selected_plot_type': 'scatter',
                 'selected_x_feature': numerical_cols[0] if len(numerical_cols) >= 1 else (df.columns[0] if len(df.columns) else ''),
                 'selected_y_feature': numerical_cols[1] if len(numerical_cols) >= 2 else '',
-                'selected_group_by': '',  # none by default
+                'selected_group_by': '',  
             }
             request.session['initial_viz_context'] = initial_context
 
@@ -164,8 +157,8 @@ def visualize_data(request):
 
     target_column_name = df.columns[-1]
 
-    # ----- Manual override OR heuristic detection -----
-    override = get_manual_override(request)  # "classification" | "regression" | None
+    
+    override = get_manual_override(request)  
     if override == "classification":
         is_classification_problem = True
         problem_type_display = "Classification (Manual Override)"
@@ -175,7 +168,7 @@ def visualize_data(request):
     else:
         is_classification_problem, problem_type_display = smart_detect_problem_type(df, target_column_name)
 
-    # Load initial plotting defaults
+    
     initial_viz_context = request.session.pop('initial_viz_context', {})
     selected_plot_type = initial_viz_context.get('selected_plot_type', 'scatter')
     selected_x_feature = initial_viz_context.get('selected_x_feature',
@@ -188,7 +181,7 @@ def visualize_data(request):
     selected_test_size = '0.2'
     current_override_value = override or ("classification" if is_classification_problem else "regression")
 
-    # Handle form actions
+    
     if request.method == 'POST':
         action = request.POST.get('action')
 
@@ -197,7 +190,7 @@ def visualize_data(request):
             selected_x_feature = request.POST.get('x_axis_feature', '')
             selected_y_feature = request.POST.get('y_axis_feature', '')
             selected_group_by = request.POST.get('group_by_feature', '')
-            # also refresh override choice (so UI state persists)
+            
             current_override_value = get_manual_override(request) or current_override_value
 
         elif action == 'train_model':
@@ -205,7 +198,7 @@ def visualize_data(request):
             selected_test_size = request.POST.get('test_size', '0.2')
             current_override_value = get_manual_override(request) or current_override_value
 
-            # collect hyperparameters
+            
             model_hyperparameters = {}
             for param_def in HYPERPARAMETER_DEFS.get(selected_model_name, []):
                 param_name = param_def['param']
@@ -236,7 +229,7 @@ def visualize_data(request):
                     raise ValueError("Please select a valid target column for training.")
 
                 if not train_features:
-                    # fallback: all numeric except target
+                    
                     train_features = [col for col in numerical_column_names if col != train_target]
                     if not train_features:
                         raise ValueError("No numerical features found or selected for training.")
@@ -248,7 +241,7 @@ def visualize_data(request):
                 X = df[train_features]
                 y = df[train_target]
 
-                # drop NaNs consistently
+                
                 combined = pd.concat([X, y], axis=1).dropna()
                 if combined.empty or len(combined) < 2:
                     raise ValueError("Not enough valid data points for training after handling missing values.")
@@ -256,7 +249,7 @@ def visualize_data(request):
                 X_cleaned = combined[train_features]
                 y_cleaned = combined[train_target]
 
-                # encode target if classification
+                
                 if is_classification_problem:
                     le = LabelEncoder()
                     y_encoded = le.fit_transform(y_cleaned)
@@ -266,7 +259,7 @@ def visualize_data(request):
 
                 X_train, X_test, y_train, y_test = train_test_split(X_cleaned, y_encoded, test_size=test_size, random_state=42)
 
-                # choose model
+                
                 model = None
                 if is_classification_problem:
                     if selected_model_name == 'logistic_regression':
@@ -323,13 +316,11 @@ def visualize_data(request):
                 training_error = f"An unexpected error occurred during training: {e}"
                 traceback.print_exc()
 
-    # -------------------------
-    # Plotting
-    # -------------------------
+    
     try:
         fig, ax = plt.subplots(figsize=(10, 7))
 
-        # default X
+        
         if not selected_x_feature or selected_x_feature not in all_column_names:
             if numerical_column_names:
                 selected_x_feature = numerical_column_names[0]
@@ -339,7 +330,7 @@ def visualize_data(request):
         x_data = df[selected_x_feature]
 
         if selected_plot_type == 'scatter':
-            # default Y (second numeric if possible)
+            
             if not selected_y_feature or selected_y_feature not in all_column_names:
                 if len(numerical_column_names) > 1:
                     selected_y_feature = numerical_column_names[1]
@@ -451,7 +442,7 @@ def visualize_data(request):
         'hyperparameter_defs': HYPERPARAMETER_DEFS,
         'selected_model_name': selected_model_name,
         'selected_test_size': selected_test_size,
-        # expose current override so the template can keep a dropdown in sync
-        'current_problem_override': current_override_value,  # "classification" or "regression"
+        
+        'current_problem_override': current_override_value,  
     }
     return render(request, 'project1/visualization.html', context)
