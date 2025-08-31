@@ -163,11 +163,21 @@
         </div>
     </div>
 
+        
+    <div style="margin-top: 40px;"></div>
 
+    <p style="margin-top: 30px; text-align: center;">
+  <a href="{% url 'project1:index' %}" class="upload-button"
+     style="text-decoration:none; display:inline-block; margin-bottom:24px;">
+    Upload Another Dataset
+  </a>
+</p>
 
-    <p style="margin-top: 40px; text-align: center;">
-        <a href="{% url 'project1:index' %}" class="custom-link-button">Upload Another Dataset</a>
-    </p>
+<p style="text-align: center;">
+  <a href="/" class="upload-button" style="text-decoration:none; display:inline-block;">
+    Back
+  </a>
+</p>
 
 {% endblock %}
 
@@ -181,14 +191,12 @@
         const modelSelect = document.getElementById('model_name');
         const hyperparametersContainer = document.getElementById('hyperparameters-container');
 
-
         const numericalColumnNames = JSON.parse(document.getElementById('numerical_cols_json').textContent || document.getElementById('numerical_cols_json').innerHTML);
         const allModelOptions = JSON.parse(document.getElementById('model_options_json').textContent || document.getElementById('model_options_json').innerHTML);
         const hyperparameterDefs = JSON.parse(document.getElementById('hyperparameter_defs_json').textContent || document.getElementById('hyperparameter_defs_json').innerHTML);
 
         const isClassificationProblem = "{{ is_classification_problem|yesno:'true,false' }}" === 'true';
         const initialSelectedModelName = "{{ selected_model_name }}";
-
 
         function updatePlotFormVisibility() {
             const selectedType = plotTypeSelect.value;
@@ -204,7 +212,6 @@
                 groupBySelect.value = "";
             }
         }
-
 
         function updateModelOptions() {
             modelSelect.innerHTML = '';
@@ -236,12 +243,10 @@
                 modelSelect.options[0].selected = true;
             }
 
-
             const testSizeInput = document.getElementById('test_size');
             if (testSizeInput) {
                 testSizeInput.value = "{{ selected_test_size|default:'0.2' }}";
             }
-
 
             renderHyperparameters();
         }
@@ -309,33 +314,27 @@
 
         modelSelect.addEventListener('change', renderHyperparameters);
 
-
         const modal = document.getElementById("resultsModal");
         const closeButton = document.querySelector(".close-button");
         const trainingForm = document.getElementById("training-form");
         const trainModelButton = document.getElementById("train-model-button");
         const loadingSpinner = document.getElementById("loadingSpinner");
 
-
         function showModal() {
             modal.style.display = "flex";
         }
-
 
         function hideModal() {
             modal.style.display = "none";
         }
 
-
         closeButton.addEventListener('click', hideModal);
-
 
         window.addEventListener('click', function(event) {
             if (event.target == modal) {
                 hideModal();
             }
         });
-
 
         trainingForm.addEventListener('submit', function(event) {
             if (event.submitter && event.submitter.id === 'train-model-button') {
@@ -345,11 +344,9 @@
             }
         });
 
-
         {% if evaluation_results or training_error %}
             showModal();
         {% endif %}
-
 
         updatePlotFormVisibility();
         updateModelOptions();

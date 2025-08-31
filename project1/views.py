@@ -57,20 +57,26 @@ HYPERPARAMETER_DEFS = {
     ],
 }
 
+def _json_safe(obj):
+    if isinstance(obj, dict):
+        return {str(k): _json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple, set)):
+        return [_json_safe(v) for v in obj]
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    if isinstance(obj, (pd.Series, pd.Index)):
+        return obj.tolist()
+    if isinstance(obj, (np.integer,)):
+        return int(obj)
+    if isinstance(obj, (np.floating,)):
+        return float(obj)
+    if isinstance(obj, (np.bool_,)):
+        return bool(obj)
+    return obj
 
 def smart_detect_problem_type(df: pd.DataFrame, target_col: str):
-    """
-    Heuristic:
-      - If target is numeric:
-          * If integer dtype AND unique values in [2,5] -> Classification (Numeric Labels)
-          * Else -> Regression
-      - If target is non-numeric and >1 unique -> Classification (Categorical Labels)
-      - Else -> Unknown
-    Returns: (is_classification: bool, display: str)
-    """
     target = df[target_col]
     nunq = target.nunique(dropna=True)
-
     if pd.api.types.is_numeric_dtype(target):
         is_int = pd.api.types.is_integer_dtype(target)
         if is_int and 2 <= nunq <= 5:
@@ -83,31 +89,21 @@ def smart_detect_problem_type(df: pd.DataFrame, target_col: str):
         return False, "Cannot determine problem type (single unique target value or invalid type)"
 
 def get_manual_override(request):
-    """
-    Read manual override from POST or GET:
-      - 'classification' or 'regression' or None
-    """
     override = request.POST.get('force_problem_type') or request.GET.get('force_problem_type')
     if override in ("classification", "regression"):
         return override
     return None
 
-
 def index(request):
     if request.method == 'POST':
         uploaded_file = request.FILES.get('csv_file')
-
         if not uploaded_file:
             return render(request, 'project1/index.html', {'error': 'No file uploaded. Please select a CSV file.'})
-
         if not uploaded_file.name.endswith('.csv'):
             return render(request, 'project1/index.html', {'error': 'Invalid file type. Please upload a CSV file.'})
-
         try:
             data_io = io.StringIO(uploaded_file.read().decode('utf-8'))
             df = pd.read_csv(data_io)
-
-            
             if len(df.columns) > 1 and (
                 df.columns[0].lower() in ['id', 'idx', 'index'] or
                 (pd.api.types.is_numeric_dtype(df.iloc[:, 0]) and
@@ -115,35 +111,28 @@ def index(request):
                  df.iloc[:, 0].is_monotonic_increasing)
             ):
                 df = df.iloc[:, 1:]
-
             request.session['df_data'] = df.to_json()
-
-            
             numerical_cols = df.select_dtypes(include=['number']).columns.tolist()
             initial_context = {
                 'selected_plot_type': 'scatter',
                 'selected_x_feature': numerical_cols[0] if len(numerical_cols) >= 1 else (df.columns[0] if len(df.columns) else ''),
                 'selected_y_feature': numerical_cols[1] if len(numerical_cols) >= 2 else '',
-                'selected_group_by': '',  
+                'selected_group_by': '',
             }
             request.session['initial_viz_context'] = initial_context
-
             return HttpResponseRedirect(reverse('project1:visualize_data'))
-
         except pd.errors.EmptyDataError:
             return render(request, 'project1/index.html', {'error': 'The uploaded CSV file is empty.'})
         except pd.errors.ParserError:
             return render(request, 'project1/index.html', {'error': 'Could not parse CSV file. Please check its format.'})
         except Exception as e:
             return render(request, 'project1/index.html', {'error': f'An unexpected error occurred: {e}'})
-
     return render(request, 'project1/index.html')
 
 def visualize_data(request):
     df_json = request.session.get('df_data')
     if not df_json:
         return HttpResponseRedirect(reverse('project1:index'))
-
     df = pd.read_json(df_json)
 
     plot_url = None
@@ -154,11 +143,9 @@ def visualize_data(request):
     all_column_names = df.columns.tolist()
     numerical_column_names = df.select_dtypes(include=['number']).columns.tolist()
     categorical_column_names = df.select_dtypes(include=['object', 'category', 'bool']).columns.tolist()
-
     target_column_name = df.columns[-1]
 
-    
-    override = get_manual_override(request)  
+    override = get_manual_override(request)
     if override == "classification":
         is_classification_problem = True
         problem_type_display = "Classification (Manual Override)"
@@ -168,7 +155,6 @@ def visualize_data(request):
     else:
         is_classification_problem, problem_type_display = smart_detect_problem_type(df, target_column_name)
 
-    
     initial_viz_context = request.session.pop('initial_viz_context', {})
     selected_plot_type = initial_viz_context.get('selected_plot_type', 'scatter')
     selected_x_feature = initial_viz_context.get('selected_x_feature',
@@ -181,7 +167,6 @@ def visualize_data(request):
     selected_test_size = '0.2'
     current_override_value = override or ("classification" if is_classification_problem else "regression")
 
-    
     if request.method == 'POST':
         action = request.POST.get('action')
 
@@ -190,7 +175,6 @@ def visualize_data(request):
             selected_x_feature = request.POST.get('x_axis_feature', '')
             selected_y_feature = request.POST.get('y_axis_feature', '')
             selected_group_by = request.POST.get('group_by_feature', '')
-            
             current_override_value = get_manual_override(request) or current_override_value
 
         elif action == 'train_model':
@@ -198,7 +182,6 @@ def visualize_data(request):
             selected_test_size = request.POST.get('test_size', '0.2')
             current_override_value = get_manual_override(request) or current_override_value
 
-            
             model_hyperparameters = {}
             for param_def in HYPERPARAMETER_DEFS.get(selected_model_name, []):
                 param_name = param_def['param']
@@ -207,7 +190,7 @@ def visualize_data(request):
                 if param_value_str is not None:
                     try:
                         if param_type == 'int':
-                            model_hyperparameters[param_name] = int(param_value_str)
+                            model_hyperparameters[param_name] = int(float(param_value_str))
                         elif param_type == 'float':
                             model_hyperparameters[param_name] = float(param_value_str)
                         elif param_type == 'bool':
@@ -224,42 +207,33 @@ def visualize_data(request):
                 test_size = float(selected_test_size)
                 if not (0.0 < test_size < 1.0):
                     raise ValueError("Test size must be between 0 and 1.")
-
                 if not train_target or train_target not in all_column_names:
                     raise ValueError("Please select a valid target column for training.")
-
                 if not train_features:
-                    
                     train_features = [col for col in numerical_column_names if col != train_target]
                     if not train_features:
                         raise ValueError("No numerical features found or selected for training.")
-
                 for feature in train_features:
                     if feature not in numerical_column_names:
                         raise ValueError(f"Feature '{feature}' is not numerical and cannot be used for training.")
 
                 X = df[train_features]
                 y = df[train_target]
-
-                
                 combined = pd.concat([X, y], axis=1).dropna()
                 if combined.empty or len(combined) < 2:
                     raise ValueError("Not enough valid data points for training after handling missing values.")
-
                 X_cleaned = combined[train_features]
                 y_cleaned = combined[train_target]
 
-                
                 if is_classification_problem:
                     le = LabelEncoder()
                     y_encoded = le.fit_transform(y_cleaned)
-                    request.session['class_names'] = list(le.classes_)
+                    request.session['class_names'] = _json_safe(list(le.classes_))
                 else:
                     y_encoded = y_cleaned
 
                 X_train, X_test, y_train, y_test = train_test_split(X_cleaned, y_encoded, test_size=test_size, random_state=42)
 
-                
                 model = None
                 if is_classification_problem:
                     if selected_model_name == 'logistic_regression':
@@ -295,20 +269,20 @@ def visualize_data(request):
                 }
                 if is_classification_problem:
                     results.update({
-                        'Accuracy': accuracy_score(y_test, y_pred),
-                        'Precision (Weighted)': precision_score(y_test, y_pred, average='weighted', zero_division=0),
-                        'Recall (Weighted)': recall_score(y_test, y_pred, average='weighted', zero_division=0),
-                        'F1 Score (Weighted)': f1_score(y_test, y_pred, average='weighted', zero_division=0),
+                        'Accuracy': float(accuracy_score(y_test, y_pred)),
+                        'Precision (Weighted)': float(precision_score(y_test, y_pred, average='weighted', zero_division=0)),
+                        'Recall (Weighted)': float(recall_score(y_test, y_pred, average='weighted', zero_division=0)),
+                        'F1 Score (Weighted)': float(f1_score(y_test, y_pred, average='weighted', zero_division=0)),
                     })
                 else:
                     results.update({
-                        'Mean Squared Error': mean_squared_error(y_test, y_pred),
-                        'R2 Score': r2_score(y_test, y_pred),
-                        'Mean Absolute Error': mean_absolute_error(y_test, y_pred),
+                        'Mean Squared Error': float(mean_squared_error(y_test, y_pred)),
+                        'R2 Score': float(r2_score(y_test, y_pred)),
+                        'Mean Absolute Error': float(mean_absolute_error(y_test, y_pred)),
                     })
 
                 evaluation_results = results
-                request.session['evaluation_results'] = evaluation_results
+                request.session['evaluation_results'] = _json_safe(evaluation_results)
 
             except ValueError as ve:
                 training_error = str(ve)
@@ -316,21 +290,16 @@ def visualize_data(request):
                 training_error = f"An unexpected error occurred during training: {e}"
                 traceback.print_exc()
 
-    
     try:
         fig, ax = plt.subplots(figsize=(10, 7))
-
-        
         if not selected_x_feature or selected_x_feature not in all_column_names:
             if numerical_column_names:
                 selected_x_feature = numerical_column_names[0]
             else:
                 raise ValueError("No numerical features available for plotting.")
-
         x_data = df[selected_x_feature]
 
         if selected_plot_type == 'scatter':
-            
             if not selected_y_feature or selected_y_feature not in all_column_names:
                 if len(numerical_column_names) > 1:
                     selected_y_feature = numerical_column_names[1]
@@ -338,9 +307,7 @@ def visualize_data(request):
                     raise ValueError("Scatter plot requires a Y-axis feature.")
             if selected_x_feature not in numerical_column_names or selected_y_feature not in numerical_column_names:
                 raise ValueError("Scatter plot features must be numerical.")
-
             y_data = df[selected_y_feature]
-
             if selected_group_by and selected_group_by != "None" and selected_group_by in all_column_names:
                 group_col_data = df[selected_group_by]
                 unique_groups = group_col_data.unique()
@@ -353,7 +320,6 @@ def visualize_data(request):
                 plt.tight_layout(rect=[0, 0, 0.85, 1])
             else:
                 ax.scatter(x_data, y_data, alpha=0.7)
-
             ax.set_xlabel(selected_x_feature)
             ax.set_ylabel(selected_y_feature)
             ax.set_title(f'Scatter Plot: {selected_x_feature} vs {selected_y_feature}')
@@ -372,7 +338,6 @@ def visualize_data(request):
                 raise ValueError("Box Plot requires a numerical feature.")
             if selected_x_feature not in numerical_column_names:
                 raise ValueError("Box Plot feature must be numerical.")
-
             if selected_group_by and selected_group_by != "None" and selected_group_by in all_column_names:
                 if pd.api.types.is_numeric_dtype(df[selected_group_by]) and df[selected_group_by].nunique() > 10:
                     raise ValueError(
@@ -391,25 +356,21 @@ def visualize_data(request):
                 ax.set_title(f'Box Plot of {selected_x_feature}')
                 ax.set_xticks([1])
                 ax.set_xticklabels([selected_x_feature])
-
         else:
             raise ValueError("Invalid plot type selected.")
 
         ax.grid(True, linestyle='--', alpha=0.6)
         plt.tight_layout()
-
         buffer = io.BytesIO()
         plt.savefig(buffer, format='png')
         buffer.seek(0)
         plot_url = base64.b64encode(buffer.getvalue()).decode()
         plt.close(fig)
-
     except Exception as e:
         plot_error = f"Error generating plot: {e}"
         print(f"Plotting Error: {e}")
 
     df_head_html = df.head().to_html(classes='table table-bordered table-striped', index=False)
-
     if 'evaluation_results' in request.session:
         evaluation_results = request.session.pop('evaluation_results')
 
@@ -442,7 +403,6 @@ def visualize_data(request):
         'hyperparameter_defs': HYPERPARAMETER_DEFS,
         'selected_model_name': selected_model_name,
         'selected_test_size': selected_test_size,
-        
-        'current_problem_override': current_override_value,  
+        'current_problem_override': current_override_value,
     }
     return render(request, 'project1/visualization.html', context)
